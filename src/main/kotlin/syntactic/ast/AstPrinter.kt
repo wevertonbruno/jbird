@@ -2,7 +2,7 @@ package syntactic.ast
 
 class AstPrinter : Visitor<String> {
 
-    fun print(expr: Expr) = expr.accept(this)
+    fun print(expr: Expr?) = expr?.accept(this) ?: "nil"
 
     override fun visitBinaryExpr(binary: Binary): String =
         "(${binary.operator.lexeme} ${binary.left.accept(this)} ${binary.right.accept(this)})"

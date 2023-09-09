@@ -2,6 +2,8 @@ package interpreter
 
 import lexical.Scanner
 import reports.ErrorReporter
+import syntactic.Parser
+import syntactic.ast.AstPrinter
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.nio.charset.Charset
@@ -16,7 +18,7 @@ class JBird(
     fun executeFromFile(path: String) {
         val bytes = Files.readAllBytes(Paths.get(path))
         execute(String(bytes, Charset.defaultCharset()))
-        if(scanReporter.hadError()) exitProcess(65)
+        if (scanReporter.hadError() || parserReporter.hadError()) exitProcess(65)
     }
 
     fun executeFromCmd() {
@@ -27,17 +29,20 @@ class JBird(
             print("> ")
             reader.readLine()
                 ?.run(::execute)
-                .also { scanReporter.resetError() }
+                .also { scanReporter.resetError(); parserReporter.resetError() }
                 ?: break
         }
     }
 
     private fun execute(script: String) {
-        // Implementing Classes
-        Scanner(script, scanReporter).apply {
-            scanTokens().forEach {
-                println(it)
-            }
-        }
+        val scanner = Scanner(script, scanReporter)
+        val parser = Parser(scanner, parserReporter)
+        val ast = parser.parse()
+
+        if (checkError()) return
+
+        print( AstPrinter().print(ast) )
     }
+
+    private fun checkError() = scanReporter.hadError() || parserReporter.hadError()
 }

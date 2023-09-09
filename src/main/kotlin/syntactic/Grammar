@@ -2,10 +2,22 @@ expression -> literal | unary_expression | binary_expression | grouping;
 
 literal -> NUMBER | STRING | TRUE | FALSE | NIL;
 
-unary_expression -> ( "-" | "!" ) expression;
-
 binary_expression -> expression operator expression;
 
-operator -> PLUS | MINUS | SLASH | ... ;
-
 grouping -> L_PAREN expression R_PAREN;
+
+=======
+
+expression -> equality;
+
+equality -> comparison ( ( EQUAL_EQUAL | NOT_EQUAL ) comparison ) *;
+
+comparison -> term ( ( GREATER | GREATER_THEN | LESS | LESS_THEN ) term )*;
+
+term -> factor ( ( PLUS | MINUS ) factor )*;
+
+factor -> unary ( (MULTI | SLASH) unary ) *;
+
+unary -> (EXCLAMATION | MINUS) unary | primary;
+
+primary -> literal | grouping;

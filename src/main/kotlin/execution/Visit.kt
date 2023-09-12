@@ -1,4 +1,0 @@
-package execution
-
-class Visit {
-}

@@ -2,7 +2,7 @@ package execution
 
 import syntactic.*
 
-class Printer : Visitor<String> {
+class Printer : Expr.Visitor<String> {
 
     fun print(expr: Expr?) = expr?.accept(this) ?: "nil"
 

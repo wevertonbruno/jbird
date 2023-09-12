@@ -5,20 +5,12 @@ import lexical.TokenType
 import reports.ErrorReporter
 import syntactic.*
 
-class Interpreter(private val errorReporter: ErrorReporter) : Visitor<Any?> {
+class Interpreter(private val errorReporter: ErrorReporter) : InterpreterVisitor {
 
-    fun interpret(expr: Expr?) = try {
-        val value = expr?.let { evaluate(expr) } ?: ""
-        println("[output]: $value")
+    fun interpret(program: Program?) = try {
+        program?.accept(this)
     } catch (ex: RuntimeError) {
         errorReporter.report(ex.token, ex.message)
-    }
-
-    fun interpretAndGetValue(expr: Expr?) = try {
-        expr?.let { evaluate(expr) } ?: ""
-    } catch (ex: RuntimeError) {
-        errorReporter.report(ex.token, ex.message)
-        throw ex
     }
 
     override fun visitBinaryExpr(binary: Binary): Any? = Pair(evaluate(binary.left), evaluate(binary.right))
@@ -89,6 +81,16 @@ class Interpreter(private val errorReporter: ErrorReporter) : Visitor<Any?> {
             else evaluate(ternary.otherwiseBranch)
         }
 
+    override fun visitExpressionStmt(stmt: ExpressionStmt) {
+        evaluate(stmt.expr)
+    }
+
+    override fun visitPrintStmt(stmt: PrintStmt) {
+        evaluate(stmt.expr)
+            .let(::stringify)
+            .also(::println)
+    }
+
     private fun evaluate(expr: Expr): Any? = expr.accept(this)
 
     private fun isTruthy(value: Any?): Boolean = when (value) {
@@ -108,4 +110,6 @@ class Interpreter(private val errorReporter: ErrorReporter) : Visitor<Any?> {
     private fun isStringOrNumber(value: Any?): Boolean = value is String || value is Number
 
     private fun double(value: Number) = value.toDouble()
+
+    private fun stringify(value: Any?): String = value?.let { value.toString() } ?: ""
 }

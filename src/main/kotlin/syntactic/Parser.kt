@@ -8,6 +8,7 @@ import reports.ErrorReporter
 
 private const val EXPECTED_R_PAREN = "Expect ')' after expression."
 private const val EXPECTED_TOKEN = "Expect token '%s'"
+private const val EXPECTED_TOKENS = "Expect token(s) %s"
 private const val UNEXPECTED_PRIMARY_TOKEN = "Unexpected token %s. Expected a literal or grouping expression."
 
 class ParserException(val token: Token, override val message: String): RuntimeException(message)
@@ -16,11 +17,32 @@ class Parser(private val scanner: Scanner, private val errorReporter: ErrorRepor
     private var currentCursor = 0
 
     fun parse() = try {
+        val program = Program.newInstance()
         scanner.scanTokens()
-        ternary()
+            while (!isEOF()) {
+                program.addStatement( statement() )
+            }
+        program
     } catch (ex: ParserException) {
         errorReporter.report(ex.token, ex.message)
         null
+    }
+
+    private fun statement(): Stmt = when {
+        matchToken(TokenType.PRINT) -> printStatement()
+        else -> expressionStatement()
+    }
+
+    private fun printStatement(): Stmt {
+        val value = expression()
+        consumeSeparator()
+        return PrintStmt(value)
+    }
+
+    private fun expressionStatement(): Stmt {
+        val value = ternary()
+        consumeSeparator()
+        return ExpressionStmt(value)
     }
 
     private fun ternary(): Expr = expression()
@@ -73,6 +95,12 @@ class Parser(private val scanner: Scanner, private val errorReporter: ErrorRepor
                 val right = unary()
                 return@run Binary(this, operator, right)
             }
+
+            while (matchToken(TokenType.PLUS, TokenType.MINUS)) {
+                val operator = getPreviousToken()
+                val right = term()
+                return@run Binary(this, operator, right)
+            }
             return@run this
         }
 
@@ -96,12 +124,19 @@ class Parser(private val scanner: Scanner, private val errorReporter: ErrorRepor
             return Grouping(expression)
         }
 
-        throw ParserException(peek(), UNEXPECTED_PRIMARY_TOKEN.format(peek()))
+        return expression()
+
+        //throw ParserException(peek(), UNEXPECTED_PRIMARY_TOKEN.format(peek()))
     }
 
     private fun consumeToken(type: TokenType, message: String? = null): Token {
         if(checkToken(type)) return advanceCursor()
         throw ParserException(peek(), message ?: EXPECTED_TOKEN.format(peek().lexeme))
+    }
+
+    private fun consumeSeparator(): Token {
+        if(checkToken(TokenType.SEMICOLON) || checkToken(TokenType.BREAK_LINE)) return advanceCursor()
+        throw ParserException(peek(), EXPECTED_TOKENS.format("';' or '\\n'"))
     }
 
     private fun matchToken(vararg tokenTypes: TokenType): Boolean {

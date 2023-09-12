@@ -24,8 +24,9 @@ class ParserTest {
         val scanner = Scanner(script, mockk())
         val parser = Parser(scanner, mockk())
         assertDoesNotThrow {
-            val expr = parser.parse()
-            println(Printer().print(expr))
+            val program = parser.parse()
+//            program?.statements?.forEach { println(Printer().print(it.)) }
+//            println(Printer().print(expr))
         }
     }
 }

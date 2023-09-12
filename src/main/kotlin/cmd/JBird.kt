@@ -41,11 +41,11 @@ class JBird(
         val scanner = Scanner(script, scanReporter)
         val parser = Parser(scanner, parserReporter)
         val interpreter = Interpreter(runtimeReporter)
-        val ast = parser.parse()
+        val program = parser.parse()
 
         if (checkError()) return
 
-        interpreter.interpret(ast)
+        interpreter.interpret(program)
     }
 
     private fun checkError() = scanReporter.hadError() || parserReporter.hadError()

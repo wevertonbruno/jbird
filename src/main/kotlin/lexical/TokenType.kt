@@ -15,6 +15,7 @@ enum class TokenType {
     STAR,
     QUESTION,
     COLON,
+    BREAK_LINE,
 
     // One or two character tokens.
     EXCLAMATION,

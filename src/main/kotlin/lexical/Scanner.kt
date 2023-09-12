@@ -60,7 +60,7 @@ class Scanner(
             }
 
             ' ', '\r', '\t' -> return
-            BREAK_LINE -> incrementLine()
+            BREAK_LINE -> { incrementLine(); createToken(TokenType.BREAK_LINE) }
             DOUBLE_QUOTES -> createStringLiteral()
             else -> {
                 // Check for numbers

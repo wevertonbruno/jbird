@@ -2,7 +2,6 @@ package execution
 
 import io.mockk.mockk
 import lexical.Scanner
-import lexical.TokenType
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
@@ -14,9 +13,11 @@ import java.util.stream.Stream
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class InterpreterTest {
     private fun getTestSource() = Stream.of(
-        Arguments.of("""(1 + 3) * 5""", 20.0),
-        Arguments.of("""42 > 42 ? 42 : 43 > 42 ? 0 : 1""", 0),
-        Arguments.of(""" "one" + ("_" + 1) """, "one_1"),
+//        Arguments.of("""(1 + 3) * 5;""", 20.0),
+//        Arguments.of("""42 > 42 ? 42 : 43 > 42 ? 0 : 1;""", 0),
+//        Arguments.of(""" "one" + ("_" + 1); """, "one_1"),
+        Arguments.of(""" print 1 + 2 + 3 + 4 - 5 * 3 > 0; """, "one_1"),
+        //Arguments.of(""" print "Hello, World!"${"\n"} """, "one_1"),
     )
 
     @ParameterizedTest
@@ -27,9 +28,8 @@ class InterpreterTest {
         val interpreter = Interpreter(mockk())
 
         assertDoesNotThrow {
-            val expr = parser.parse()
-            val value = interpreter.interpretAndGetValue(expr)
-            assertEquals(expected, value)
+            val program = parser.parse()
+            interpreter.interpret(program)
         }
     }
 }

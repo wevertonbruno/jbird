@@ -8,14 +8,17 @@ grouping -> L_PAREN expression R_PAREN;
 
 =======
 
-a ? b : c ? d : e
--> a ? b : (c ? d : e)
+program -> statement* EOF;
 
+statement -> expr_stmt | print_stmt;
 
+expr_stmt -> conditional_expression separator;
 
-conditional_operator -> condition | condition ? expression : conditional_operator;
+print_stmt -> PRINT expression separator;
 
-condition -> expression;
+separator -> SEMICOLON | BREAK_LINE;
+
+conditional_expression -> expression | expression ? expression : conditional_expression;
 
 expression -> equality;
 

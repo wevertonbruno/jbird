@@ -21,3 +21,7 @@ factor -> unary ( (MULTI | SLASH) unary ) *;
 unary -> (EXCLAMATION | MINUS) unary | primary;
 
 primary -> literal | grouping;
+
+======
+
+ternary_expression -> IS expression QUESTION_MARK 

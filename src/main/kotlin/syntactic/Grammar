@@ -8,6 +8,15 @@ grouping -> L_PAREN expression R_PAREN;
 
 =======
 
+a ? b : c ? d : e
+-> a ? b : (c ? d : e)
+
+
+
+conditional_operator -> condition | condition ? expression : conditional_operator;
+
+condition -> expression;
+
 expression -> equality;
 
 equality -> comparison ( ( EQUAL_EQUAL | NOT_EQUAL ) comparison ) *;
@@ -24,4 +33,4 @@ primary -> literal | grouping;
 
 ======
 
-ternary_expression -> IS expression QUESTION_MARK 
+ternary_expression -> expression QUESTION_MARK expression COLON expression;

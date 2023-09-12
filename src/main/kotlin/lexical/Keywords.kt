@@ -21,8 +21,24 @@ class Keywords {
             Pair("while", TokenType.WHILE)
         )
 
+        private val literals = mapOf<String, TokenType>(
+            Pair("false", TokenType.FALSE),
+            Pair("nil", TokenType.NIL),
+            Pair("true", TokenType.TRUE)
+        )
+
+        private val literalValues = mapOf<String, Any?>(
+            Pair("false", false),
+            Pair("nil", null),
+            Pair("true", true)
+        )
+
         fun isReserved(lexeme: String) = keywords.containsKey(lexeme)
 
+        fun isLiteral(lexeme: String) =  literals.containsKey(lexeme)
+
         fun getReserved(lexeme: String) = keywords[lexeme]!!
+
+        fun getLiteralValue(lexeme: String) = literalValues[lexeme]
     }
 }

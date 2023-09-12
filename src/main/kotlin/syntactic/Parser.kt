@@ -5,12 +5,6 @@ import lexical.Token
 import lexical.TokenLiteral
 import lexical.TokenType
 import reports.ErrorReporter
-import syntactic.ast.Binary
-import syntactic.ast.Expr
-import syntactic.ast.Grouping
-import syntactic.ast.Literal
-import syntactic.ast.Unary
-import java.lang.Exception
 
 private const val EXPECTED_R_PAREN = "Expect ')' after expression."
 private const val EXPECTED_TOKEN = "Expect token '%s'"
@@ -23,11 +17,22 @@ class Parser(private val scanner: Scanner, private val errorReporter: ErrorRepor
 
     fun parse() = try {
         scanner.scanTokens()
-        expression()
+        ternary()
     } catch (ex: ParserException) {
         errorReporter.report(ex.token, ex.message)
         null
     }
+
+    private fun ternary(): Expr = expression()
+        .run {
+            if (matchToken(TokenType.QUESTION)) {
+                val thenBranch = expression()
+                consumeToken(TokenType.COLON, "Expect ':' after then branch of ternary expression.")
+                val elseBranch = ternary()
+                return@run Ternary(this, thenBranch, elseBranch)
+            }
+            return this
+        }
 
     private fun expression(): Expr = equality()
 
@@ -81,11 +86,7 @@ class Parser(private val scanner: Scanner, private val errorReporter: ErrorRepor
         }
 
     private fun primary(): Expr {
-        if(matchToken(TokenType.FALSE)) return Literal(false)
-        if(matchToken(TokenType.TRUE)) return Literal(true)
-        if(matchToken(TokenType.NIL)) return Literal(null)
-
-        if (matchToken(TokenType.NUMBER, TokenType.STRING)) {
+        if (matchToken(TokenType.TRUE, TokenType.FALSE, TokenType.NIL, TokenType.NUMBER, TokenType.STRING)) {
             return Literal((getPreviousToken() as TokenLiteral).literal)
         }
 

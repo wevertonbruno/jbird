@@ -1,6 +1,8 @@
-package syntactic.ast
+package execution
 
-class AstPrinter : Visitor<String> {
+import syntactic.*
+
+class Printer : Visitor<String> {
 
     fun print(expr: Expr?) = expr?.accept(this) ?: "nil"
 
@@ -15,4 +17,9 @@ class AstPrinter : Visitor<String> {
 
     override fun visitLiteralExpr(literal: Literal): String =
         literal.value?.let { literal.value.toString() } ?: "nil"
+
+    override fun visitTernaryExpr(ternary: Ternary) =
+        "${ternary.condition.accept(this)} ? " +
+                "${ternary.thenBranch.accept(this)} : " +
+                ternary.otherwiseBranch.accept(this)
 }

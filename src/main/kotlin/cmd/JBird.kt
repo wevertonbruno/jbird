@@ -1,9 +1,10 @@
-package interpreter
+package cmd
 
+import execution.Interpreter
 import lexical.Scanner
 import reports.ErrorReporter
 import syntactic.Parser
-import syntactic.ast.AstPrinter
+import execution.Printer
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.nio.charset.Charset
@@ -13,12 +14,14 @@ import kotlin.system.exitProcess
 
 class JBird(
     private val scanReporter: ErrorReporter,
-    private val parserReporter: ErrorReporter
+    private val parserReporter: ErrorReporter,
+    private val runtimeReporter: ErrorReporter
 ) {
     fun executeFromFile(path: String) {
         val bytes = Files.readAllBytes(Paths.get(path))
         execute(String(bytes, Charset.defaultCharset()))
         if (scanReporter.hadError() || parserReporter.hadError()) exitProcess(65)
+        if (runtimeReporter.hadError()) exitProcess(70)
     }
 
     fun executeFromCmd() {
@@ -37,11 +40,12 @@ class JBird(
     private fun execute(script: String) {
         val scanner = Scanner(script, scanReporter)
         val parser = Parser(scanner, parserReporter)
+        val interpreter = Interpreter(runtimeReporter)
         val ast = parser.parse()
 
         if (checkError()) return
 
-        print( AstPrinter().print(ast) )
+        interpreter.interpret(ast)
     }
 
     private fun checkError() = scanReporter.hadError() || parserReporter.hadError()

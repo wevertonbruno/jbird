@@ -5,7 +5,7 @@ data class TokenLiteral(
     override val lexeme: String,
     override val line: Int,
     override val column: Int,
-    val literal: Any
+    val literal: Any?
 ) : Token(type, lexeme, line, column) {
     override fun toString(): String {
         return "[type: $type] $lexeme($literal)"

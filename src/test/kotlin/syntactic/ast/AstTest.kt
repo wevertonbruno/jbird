@@ -1,16 +1,18 @@
 package syntactic.ast
 
+import execution.Printer
 import lexical.Token
 import lexical.TokenType
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import syntactic.*
 
 
 class AstTest {
 
     @Test
     fun testItShouldPrintAST() {
-        val printer = AstPrinter()
+        val printer = Printer()
         val expression: Expr = Binary(
             Unary(
                 Token(TokenType.MINUS, "-", 1, 1),

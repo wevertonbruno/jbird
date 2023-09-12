@@ -45,6 +45,8 @@ class Scanner(
             '+' -> createToken(TokenType.PLUS)
             ';' -> createToken(TokenType.SEMICOLON)
             '*' -> createToken(TokenType.STAR)
+            '?' -> createToken(TokenType.QUESTION)
+            ':' -> createToken(TokenType.COLON)
             '!' -> createToken(chooseNextType('=', TokenType.EXCLAMATION_EQUAL, TokenType.EXCLAMATION))
             '=' -> createToken(chooseNextType('=', TokenType.EQUAL_EQUAL, TokenType.EQUAL))
             '<' -> createToken(chooseNextType('=', TokenType.LESS_EQUAL, TokenType.LESS))
@@ -118,17 +120,20 @@ class Scanner(
     private fun createToken(type: TokenType, literal: Any? = null) {
         val created = script.substring(startCursor, currentCursor)
             .let {
-
-                if (TokenType.IDENTIFIER == type){
-                    if(Keywords.isReserved(it)){
-                        return@let Token(Keywords.getReserved(it), it, line, column)
-                    } else {
-                        return@let Token(type, it, line, column)
+                if (TokenType.IDENTIFIER == type) {
+                    when {
+                        Keywords.isLiteral(it) ->
+                            TokenLiteral(Keywords.getReserved(it), it, line, column, Keywords.getLiteralValue(it))
+                        Keywords.isReserved(it) ->
+                            Token(Keywords.getReserved(it), it, line, column)
+                        else ->
+                            Token(type, it, line, column)
                     }
+                } else {
+                    val token = Token(type, it, line, column)
+                    literal?.let { lit -> TokenLiteral.of(token, lit) }
+                        ?: token
                 }
-                val token = Token(type, it, line, column)
-                literal?.let { lit -> TokenLiteral.of(token, lit) }
-                    ?: token
             }
         tokens.add(created)
     }

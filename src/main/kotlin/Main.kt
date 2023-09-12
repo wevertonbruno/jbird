@@ -1,6 +1,7 @@
-import interpreter.JBird
+import cmd.JBird
 import reports.DefaultErrorReporter
 import reports.ErrorReporter
+import reports.RuntimeReporter
 import kotlin.system.exitProcess
 
 /**
@@ -8,7 +9,8 @@ import kotlin.system.exitProcess
  */
 fun main(args: Array<String>) {
     val errorReporter: ErrorReporter = DefaultErrorReporter()
-    val jBird = JBird(errorReporter, errorReporter)
+    val runtimeReporter: ErrorReporter = RuntimeReporter()
+    val jBird = JBird(errorReporter, errorReporter, runtimeReporter)
 
     println("########################")
     println("##       BIRD         ##")

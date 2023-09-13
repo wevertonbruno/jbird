@@ -6,142 +6,177 @@ import lexical.TokenLiteral
 import lexical.TokenType
 import reports.ErrorReporter
 
-private const val EXPECTED_R_PAREN = "Expect ')' after expression."
-private const val EXPECTED_TOKEN = "Expect token '%s'"
-private const val EXPECTED_TOKENS = "Expect token(s) %s"
+private const val UNEXPECTED_TOKEN = "Unexpected token %s."
 private const val UNEXPECTED_PRIMARY_TOKEN = "Unexpected token %s. Expected a literal or grouping expression."
+private const val EXPECTED_TOKEN = "Expect token '%s'"
+private const val EXPECTED_SEPARATOR = "Expect separator ';' or Newline"
 
-class ParserException(val token: Token, override val message: String): RuntimeException(message)
+class ParserException(val token: Token, override val message: String) : RuntimeException(message)
+
+enum class Precedence {
+    None,
+    Ternary,
+    Equality,
+    Comparison,
+    Term,
+    Factor,
+    Unary,
+    Primary
+}
 
 class Parser(private val scanner: Scanner, private val errorReporter: ErrorReporter) {
     private var currentCursor = 0
 
+
+    private fun getPrecedence(type: TokenType): Precedence {
+        return when (type) {
+            TokenType.PLUS -> Precedence.Term
+            TokenType.MINUS -> Precedence.Term
+            TokenType.STAR -> Precedence.Factor
+            TokenType.SLASH -> Precedence.Factor
+            TokenType.EQUAL_EQUAL -> Precedence.Equality
+            TokenType.NOT_EQUAL -> Precedence.Equality
+            TokenType.GREATER -> Precedence.Comparison
+            TokenType.GREATER_EQUAL -> Precedence.Comparison
+            TokenType.LESS -> Precedence.Comparison
+            TokenType.LESS_EQUAL -> Precedence.Comparison
+            TokenType.EXCLAMATION -> Precedence.Unary
+            TokenType.QUESTION -> Precedence.Ternary
+            //TokenType.MINUS -> Precedence.Unary
+            else -> Precedence.None
+        }
+    }
+
     fun parse() = try {
         val program = Program.newInstance()
         scanner.scanTokens()
-            while (!isEOF()) {
-                program.addStatement( statement() )
-            }
+        while (!isEOF()) {
+            program.addStatement(parseStatement())
+        }
         program
     } catch (ex: ParserException) {
         errorReporter.report(ex.token, ex.message)
         null
     }
 
-    private fun statement(): Stmt = when {
-        matchToken(TokenType.PRINT) -> printStatement()
-        else -> expressionStatement()
+    fun parseExpression(): Expr {
+        scanner.scanTokens()
+        return parseExpr(Precedence.None)
     }
 
-    private fun printStatement(): Stmt {
-        val value = expression()
-        consumeSeparator()
-        return PrintStmt(value)
+    private fun parseStatement() = when {
+        matchToken(TokenType.PRINT) -> parsePrintStmt()
+        else -> parseExpressionStmt()
     }
 
-    private fun expressionStatement(): Stmt {
-        val value = ternary()
-        consumeSeparator()
-        return ExpressionStmt(value)
+    private fun parsePrintStmt() =
+        parseExpr(Precedence.None)
+            .let {
+                consumeSeparator()
+                PrintStmt(it)
+            }
+
+    private fun parseExpressionStmt() =
+        parseExpr(Precedence.None)
+            .let {
+                consumeSeparator()
+                ExpressionStmt(it)
+            }
+
+    fun parseExpr(precedence: Precedence): Expr {
+        var expr = parsePrefix()
+        while (!isEOF()) {
+            val nextPrecedence = getPrecedence(peek().type)
+            if (nextPrecedence <= precedence) {
+                break
+            }
+            expr = parse_infix(expr)
+        }
+        return expr
     }
 
-    private fun ternary(): Expr = expression()
-        .run {
-            if (matchToken(TokenType.QUESTION)) {
-                val thenBranch = expression()
-                consumeToken(TokenType.COLON, "Expect ':' after then branch of ternary expression.")
-                val elseBranch = ternary()
-                return@run Ternary(this, thenBranch, elseBranch)
-            }
-            return this
+    private fun parsePrefix(): Expr =
+        when (peek().type) {
+            TokenType.NUMBER,
+            TokenType.STRING,
+            TokenType.NIL,
+            TokenType.TRUE,
+            TokenType.FALSE -> primary()
+
+            TokenType.EXCLAMATION,
+            TokenType.MINUS -> unary()
+
+            TokenType.LEFT_PAREN -> grouping()
+            else -> throw ParserException(peek(), UNEXPECTED_TOKEN.format(peek()))
         }
 
-    private fun expression(): Expr = equality()
+    private fun parse_infix(left: Expr): Expr =
+        when (peek().type) {
+            TokenType.NOT_EQUAL,
+            TokenType.EQUAL_EQUAL,
+            TokenType.LESS,
+            TokenType.LESS_EQUAL,
+            TokenType.GREATER,
+            TokenType.GREATER_EQUAL,
+            TokenType.PLUS,
+            TokenType.MINUS,
+            TokenType.SLASH,
+            TokenType.STAR -> binary(left)
 
-    private fun equality(): Expr = comparison()
-        .run {
-            while (matchToken(TokenType.EXCLAMATION_EQUAL, TokenType.EQUAL_EQUAL)) {
-                val operator = getPreviousToken()
-                val right = comparison()
-                return@run Binary(this, operator, right)
-            }
-            return@run this
+            TokenType.QUESTION -> ternary(left)
+
+            else -> throw ParserException(peek(), UNEXPECTED_TOKEN.format(peek()))
         }
 
-    private fun comparison(): Expr = term()
-        .run {
-            while (matchToken(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL)) {
-                val operator = getPreviousToken()
-                val right = term()
-                return@run Binary(this, operator, right)
-            }
-            return@run this
-        }
+    private fun binary(left: Expr): Expr {
+        val precedence = getPrecedence(peek().type)
+        advanceCursor()
+        val operator = getPreviousToken()
+        val right = parseExpr(precedence)
+        return Binary(left, operator, right)
+    }
 
-    private fun term(): Expr = factor()
-        .run {
-            while (matchToken(TokenType.PLUS, TokenType.MINUS)) {
-                val operator = getPreviousToken()
-                val right = factor()
-                return@run Binary(this, operator, right)
-            }
-            return@run this
-        }
+    private fun ternary(left: Expr): Expr {
+        advanceCursor()
+        val consequence = parseExpr(Precedence.None)
+        advanceCursor()
+        val alternative = parseExpr(Precedence.None)
+        return Ternary(left, consequence, alternative)
+    }
 
-    private fun factor(): Expr = unary()
-        .run {
-            while (matchToken(TokenType.SLASH, TokenType.STAR)) {
-                val operator = getPreviousToken()
-                val right = unary()
-                return@run Binary(this, operator, right)
-            }
+    private fun unary(): Expr {
+        val operator = getPreviousToken()
+        val right = parseExpr(Precedence.Unary)
+        return Unary(operator, right)
+    }
 
-            while (matchToken(TokenType.PLUS, TokenType.MINUS)) {
-                val operator = getPreviousToken()
-                val right = term()
-                return@run Binary(this, operator, right)
-            }
-            return@run this
-        }
-
-    private fun unary(): Expr =
-        if (matchToken(TokenType.EXCLAMATION, TokenType.MINUS)) {
-            val operator = getPreviousToken()
-            val right = unary()
-            Unary(operator, right)
-        } else {
-            primary()
-        }
-
-    private fun primary(): Expr {
+    private fun primary(): Expr =
         if (matchToken(TokenType.TRUE, TokenType.FALSE, TokenType.NIL, TokenType.NUMBER, TokenType.STRING)) {
-            return Literal((getPreviousToken() as TokenLiteral).literal)
+            Literal((getPreviousToken() as TokenLiteral).literal)
+        } else {
+            throw ParserException(peek(), UNEXPECTED_PRIMARY_TOKEN.format(peek()))
         }
 
-        if(matchToken(TokenType.LEFT_PAREN)) {
-            val expression = expression()
-            consumeToken(TokenType.RIGHT_PAREN, EXPECTED_R_PAREN)
-            return Grouping(expression)
-        }
-
-        return expression()
-
-        //throw ParserException(peek(), UNEXPECTED_PRIMARY_TOKEN.format(peek()))
+    private fun grouping(): Expr {
+        consumeToken(TokenType.LEFT_PAREN, "Expected '(' before expression.")
+        val expr = parseExpr(Precedence.None)
+        consumeToken(TokenType.RIGHT_PAREN, "Expected ')' after expression.")
+        return Grouping(expr)
     }
 
     private fun consumeToken(type: TokenType, message: String? = null): Token {
-        if(checkToken(type)) return advanceCursor()
+        if (checkToken(type)) return advanceCursor()
         throw ParserException(peek(), message ?: EXPECTED_TOKEN.format(peek().lexeme))
     }
 
     private fun consumeSeparator(): Token {
-        if(checkToken(TokenType.SEMICOLON) || checkToken(TokenType.BREAK_LINE)) return advanceCursor()
-        throw ParserException(peek(), EXPECTED_TOKENS.format("';' or '\\n'"))
+        if (checkToken(TokenType.SEMICOLON) || checkToken(TokenType.BREAK_LINE)) return advanceCursor()
+        throw ParserException(peek(), EXPECTED_SEPARATOR)
     }
 
     private fun matchToken(vararg tokenTypes: TokenType): Boolean {
         tokenTypes.forEach {
-            if(checkToken(it)) {
+            if (checkToken(it)) {
                 advanceCursor()
                 return true
             }
@@ -155,7 +190,7 @@ class Parser(private val scanner: Scanner, private val errorReporter: ErrorRepor
     }
 
     private fun advanceCursor(): Token {
-        if(!isEOF()) currentCursor++
+        if (!isEOF()) currentCursor++
         return getPreviousToken()
     }
 
@@ -171,11 +206,13 @@ class Parser(private val scanner: Scanner, private val errorReporter: ErrorRepor
         while (!isEOF()) {
             if (getPreviousToken().type == TokenType.SEMICOLON) return
 
-            when(peek().type) {
+            when (peek().type) {
                 TokenType.CLASS, TokenType.FUNC, TokenType.VAR, TokenType.FOR,
                 TokenType.IF, TokenType.WHILE, TokenType.PRINT, TokenType.RETURN -> return
+
                 else -> advanceCursor()
             }
         }
     }
+
 }

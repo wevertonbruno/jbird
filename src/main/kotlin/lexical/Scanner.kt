@@ -47,7 +47,7 @@ class Scanner(
             '*' -> createToken(TokenType.STAR)
             '?' -> createToken(TokenType.QUESTION)
             ':' -> createToken(TokenType.COLON)
-            '!' -> createToken(chooseNextType('=', TokenType.EXCLAMATION_EQUAL, TokenType.EXCLAMATION))
+            '!' -> createToken(chooseNextType('=', TokenType.NOT_EQUAL, TokenType.EXCLAMATION))
             '=' -> createToken(chooseNextType('=', TokenType.EQUAL_EQUAL, TokenType.EQUAL))
             '<' -> createToken(chooseNextType('=', TokenType.LESS_EQUAL, TokenType.LESS))
             '>' -> createToken(chooseNextType('=', TokenType.GREATER_EQUAL, TokenType.GREATER))

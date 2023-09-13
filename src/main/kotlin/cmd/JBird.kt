@@ -4,7 +4,6 @@ import execution.Interpreter
 import lexical.Scanner
 import reports.ErrorReporter
 import syntactic.Parser
-import execution.Printer
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.nio.charset.Charset

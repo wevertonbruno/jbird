@@ -27,7 +27,7 @@ class ScannerTest {
 
         val scanner = Scanner(script, errorReporter)
         scanner.scanTokens()
-        assertEquals(17, scanner.tokens.size)
+        assertEquals(19, scanner.tokens.size)
     }
 
     private fun getTokenLiteralTestSource() = Stream.of(

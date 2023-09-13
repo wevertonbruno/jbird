@@ -19,7 +19,7 @@ enum class TokenType {
 
     // One or two character tokens.
     EXCLAMATION,
-    EXCLAMATION_EQUAL,
+    NOT_EQUAL,
     EQUAL,
     EQUAL_EQUAL,
     GREATER,

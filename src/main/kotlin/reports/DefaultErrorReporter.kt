@@ -1,7 +1,7 @@
 package reports
 
-import lexical.Token
-import lexical.TokenType
+import syntactic.tokenizer.Token
+import syntactic.tokenizer.TokenType
 
 class DefaultErrorReporter : ErrorReporter {
     private var hadError: Boolean = false

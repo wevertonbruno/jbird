@@ -5,10 +5,12 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
-import org.junit.jupiter.params.provider.ArgumentsSource
 import org.junit.jupiter.params.provider.MethodSource
 import reports.DefaultErrorReporter
 import reports.ErrorReporter
+import syntactic.tokenizer.Tokenizer
+import syntactic.tokenizer.TokenLiteral
+import syntactic.tokenizer.TokenType
 import java.util.stream.Stream
 import kotlin.reflect.KClass
 import kotlin.test.assertEquals
@@ -16,7 +18,7 @@ import kotlin.test.assertTrue
 
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class ScannerTest {
+class TokenizerTest {
     private val errorReporter: ErrorReporter = DefaultErrorReporter()
 
     @Test
@@ -25,9 +27,9 @@ class ScannerTest {
             (( )){} // grouping stuff
             !*+-/=<> <= == // operators"""".trimIndent()
 
-        val scanner = Scanner(script, errorReporter)
-        scanner.scanTokens()
-        assertEquals(19, scanner.tokens.size)
+        val tokenizer = Tokenizer(script, errorReporter)
+        tokenizer.scanTokens()
+        assertEquals(19, tokenizer.tokens.size)
     }
 
     private fun getTokenLiteralTestSource() = Stream.of(
@@ -39,9 +41,9 @@ class ScannerTest {
     @ParameterizedTest
     @MethodSource("getTokenLiteralTestSource")
     fun itShouldParseTokenLiteral(script: String, type: TokenType, clazz: KClass<Any>, lexeme: Any) {
-        val scanner = Scanner(script, errorReporter)
-        scanner.scanTokens()
-        val token = scanner.tokens[0]
+        val tokenizer = Tokenizer(script, errorReporter)
+        tokenizer.scanTokens()
+        val token = tokenizer.tokens[0]
 
         assertTrue(token is TokenLiteral)
         assertEquals(type, token.type)
@@ -58,9 +60,9 @@ class ScannerTest {
     @ParameterizedTest
     @MethodSource("getTokenTestSource")
     fun itShouldParseIdentifier(script: String, type: TokenType, lexeme: Any) {
-        val scanner = Scanner(script, errorReporter)
-        assertDoesNotThrow { scanner.scanTokens() }
-        val token = scanner.tokens[0]
+        val tokenizer = Tokenizer(script, errorReporter)
+        assertDoesNotThrow { tokenizer.scanTokens() }
+        val token = tokenizer.tokens[0]
 
         assertEquals(type, token.type)
         assertEquals(lexeme, token.lexeme)

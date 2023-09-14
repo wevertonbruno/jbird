@@ -1,9 +1,9 @@
-package syntactic
+package syntactic.parser
 
-import lexical.Scanner
-import lexical.Token
-import lexical.TokenLiteral
-import lexical.TokenType
+import syntactic.tokenizer.Tokenizer
+import syntactic.tokenizer.Token
+import syntactic.tokenizer.TokenLiteral
+import syntactic.tokenizer.TokenType
 import reports.ErrorReporter
 
 private const val UNEXPECTED_TOKEN = "Unexpected token %s."
@@ -15,6 +15,7 @@ class ParserException(val token: Token, override val message: String) : RuntimeE
 
 enum class Precedence {
     None,
+    Var,
     Ternary,
     Equality,
     Comparison,
@@ -27,7 +28,7 @@ enum class Precedence {
     fun getLesser() = if(this == None) None else entries[ordinal - 1]
 }
 
-class Parser(private val scanner: Scanner, private val errorReporter: ErrorReporter) {
+class Parser(private val tokenizer: Tokenizer, private val errorReporter: ErrorReporter) {
     private var currentCursor = 0
 
 
@@ -47,13 +48,14 @@ class Parser(private val scanner: Scanner, private val errorReporter: ErrorRepor
             TokenType.EXCLAMATION -> Precedence.Unary
             TokenType.QUESTION -> Precedence.Ternary
             TokenType.LEFT_PAREN -> Precedence.Primary
+            TokenType.VAR -> Precedence.Var
             else -> Precedence.None
         }
     }
 
     fun parse() = try {
         val program = Program.newInstance()
-        scanner.scanTokens()
+        tokenizer.scanTokens()
         while (!isEOF()) {
             program.addStatement(parseStatement())
         }
@@ -63,28 +65,35 @@ class Parser(private val scanner: Scanner, private val errorReporter: ErrorRepor
         null
     }
 
-    fun parseExpression(): Expr {
-        scanner.scanTokens()
-        return parseExpr(Precedence.None)
-    }
-
-    private fun parseStatement() = when {
+    fun parseStatement() = when {
+        matchToken(TokenType.VAR) -> parseVarDeclaration()
         matchToken(TokenType.PRINT) -> parsePrintStmt()
         else -> parseExpressionStmt()
     }
+
+    private fun parseVarDeclaration() =
+        consumeToken(TokenType.IDENTIFIER, "Expect variable name.")
+            .let {
+                var expr: Expr? = null
+                if (matchToken(TokenType.EQUAL)) {
+                    expr = parseExpr(Precedence.None)
+                }
+                consumeSeparator()
+                Stmt.Var(it, expr)
+            }
 
     private fun parsePrintStmt() =
         parseExpr(Precedence.None)
             .let {
                 consumeSeparator()
-                PrintStmt(it)
+                Stmt.Print(it)
             }
 
     private fun parseExpressionStmt() =
         parseExpr(Precedence.None)
             .let {
                 consumeSeparator()
-                ExpressionStmt(it)
+                Stmt.Expression(it)
             }
 
     fun parseExpr(precedence: Precedence): Expr {
@@ -105,7 +114,8 @@ class Parser(private val scanner: Scanner, private val errorReporter: ErrorRepor
             TokenType.STRING,
             TokenType.NIL,
             TokenType.TRUE,
-            TokenType.FALSE -> primary()
+            TokenType.FALSE,
+            TokenType.IDENTIFIER -> primary()
 
             TokenType.EXCLAMATION,
             TokenType.MINUS -> unary()
@@ -141,7 +151,7 @@ class Parser(private val scanner: Scanner, private val errorReporter: ErrorRepor
             parseExpr(precedence.getLesser())
         else
             parseExpr(precedence)
-        return Binary(left, operator, right)
+        return Expr.Binary(left, operator, right)
     }
 
     private fun ternary(left: Expr): Expr {
@@ -149,27 +159,37 @@ class Parser(private val scanner: Scanner, private val errorReporter: ErrorRepor
         val consequence = parseExpr(Precedence.None)
         advanceCursor()
         val alternative = parseExpr(Precedence.None)
-        return Ternary(left, consequence, alternative)
+        return Expr.Ternary(left, consequence, alternative)
     }
 
     private fun unary(): Expr {
         val operator = getPreviousToken()
         val right = parseExpr(Precedence.Unary)
-        return Unary(operator, right)
+        return Expr.Unary(operator, right)
     }
 
     private fun primary(): Expr =
-        if (matchToken(TokenType.TRUE, TokenType.FALSE, TokenType.NIL, TokenType.NUMBER, TokenType.STRING)) {
-            Literal((getPreviousToken() as TokenLiteral).literal)
-        } else {
-            throw ParserException(peek(), UNEXPECTED_PRIMARY_TOKEN.format(peek()))
+        when(peek().type) {
+            TokenType.TRUE,
+            TokenType.FALSE,
+            TokenType.NIL,
+            TokenType.NUMBER,
+            TokenType.STRING -> {
+                advanceCursor()
+                Expr.Literal((getPreviousToken() as TokenLiteral).literal)
+            }
+            TokenType.IDENTIFIER -> {
+                advanceCursor()
+                Expr.Variable(getPreviousToken())
+            }
+            else -> throw ParserException(peek(), UNEXPECTED_PRIMARY_TOKEN.format(peek()))
         }
 
     private fun grouping(): Expr {
         consumeToken(TokenType.LEFT_PAREN, "Expected '(' before expression.")
         val expr = parseExpr(Precedence.None)
         consumeToken(TokenType.RIGHT_PAREN, "Expected ')' after expression.")
-        return Grouping(expr)
+        return Expr.Grouping(expr)
     }
 
     private fun consumeToken(type: TokenType, message: String? = null): Token {
@@ -202,9 +222,9 @@ class Parser(private val scanner: Scanner, private val errorReporter: ErrorRepor
         return getPreviousToken()
     }
 
-    private fun getPreviousToken() = scanner.tokens[currentCursor - 1]
+    private fun getPreviousToken() = tokenizer.tokens[currentCursor - 1]
 
-    private fun peek(): Token = scanner.tokens[currentCursor]
+    private fun peek(): Token = tokenizer.tokens[currentCursor]
 
     private fun isEOF() = peek().type == TokenType.EOF
 

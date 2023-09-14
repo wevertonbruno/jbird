@@ -1,4 +1,4 @@
-package lexical
+package syntactic.tokenizer
 
 enum class TokenType(val isRightAssociative: Boolean = false) {
     // Single-character tokens.
@@ -28,7 +28,7 @@ enum class TokenType(val isRightAssociative: Boolean = false) {
     LESS,
     LESS_EQUAL,
 
-    // Literals.
+    // Expr.Literals.
     IDENTIFIER,
     STRING,
     NUMBER,

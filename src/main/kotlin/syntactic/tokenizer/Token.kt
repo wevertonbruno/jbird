@@ -1,4 +1,4 @@
-package lexical
+package syntactic.tokenizer
 
 open class Token(
     open val type: TokenType,

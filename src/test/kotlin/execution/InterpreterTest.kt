@@ -1,13 +1,13 @@
 package execution
 
 import io.mockk.mockk
-import lexical.Scanner
+import syntactic.tokenizer.Tokenizer
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import syntactic.Parser
+import syntactic.parser.Parser
 import java.util.stream.Stream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -26,8 +26,8 @@ class InterpreterTest {
     @ParameterizedTest
     @MethodSource("getTestSource")
     fun itShouldInterpreterSuccessfully(script: String, expected: Any?) {
-        val scanner = Scanner(script, mockk())
-        val parser = Parser(scanner, mockk())
+        val tokenizer = Tokenizer(script, mockk())
+        val parser = Parser(tokenizer, mockk())
         val interpreter = Interpreter(mockk())
 
         assertDoesNotThrow {

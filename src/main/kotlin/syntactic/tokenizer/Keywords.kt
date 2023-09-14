@@ -1,4 +1,4 @@
-package lexical
+package syntactic.tokenizer
 
 class Keywords {
     companion object {

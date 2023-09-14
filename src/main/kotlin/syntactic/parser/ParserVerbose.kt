@@ -1,10 +1,10 @@
-/*
+package syntactic.parser/*
 package syntactic
 
-import lexical.Scanner
-import lexical.Token
-import lexical.TokenLiteral
-import lexical.TokenType
+import syntactic.tokenizer.Scanner
+import syntactic.tokenizer.Token
+import syntactic.tokenizer.TokenLiteral
+import syntactic.tokenizer.TokenType
 import reports.ErrorReporter
 
 private const val EXPECTED_R_PAREN = "Expect ')' after expression."
@@ -45,13 +45,13 @@ class ParserVerbose(private val scanner: Scanner, private val errorReporter: Err
     private fun printStatement(): Stmt {
         val value = expression()
         consumeSeparator()
-        return PrintStmt(value)
+        return Stmt.Print(value)
     }
 
     private fun expressionStatement(): Stmt {
         val value = conditionalExpr()
         consumeSeparator()
-        return ExpressionStmt(value)
+        return Stmt.Expression(value)
     }
 
     private fun conditionalExpr(): Expr = expression()
@@ -60,7 +60,7 @@ class ParserVerbose(private val scanner: Scanner, private val errorReporter: Err
                 val thenBranch = expression()
                 consumeToken(TokenType.COLON, "Expect ':' after then branch of ternary expression.")
                 val elseBranch = conditionalExpr()
-                return@run Ternary(this, thenBranch, elseBranch)
+                return@run Expr.Ternary(this, thenBranch, elseBranch)
             }
             return this
         }
@@ -72,7 +72,7 @@ class ParserVerbose(private val scanner: Scanner, private val errorReporter: Err
             while (matchToken(TokenType.NOT_EQUAL, TokenType.EQUAL_EQUAL)) {
                 val operator = getPreviousToken()
                 val right = comparison()
-                return@run Binary(this, operator, right)
+                return@run Expr.Binary(this, operator, right)
             }
             return@run this
         }
@@ -82,7 +82,7 @@ class ParserVerbose(private val scanner: Scanner, private val errorReporter: Err
             while (matchToken(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL)) {
                 val operator = getPreviousToken()
                 val right = term()
-                return@run Binary(this, operator, right)
+                return@run Expr.Binary(this, operator, right)
             }
             return@run this
         }
@@ -92,7 +92,7 @@ class ParserVerbose(private val scanner: Scanner, private val errorReporter: Err
             while (matchToken(TokenType.PLUS, TokenType.MINUS)) {
                 val operator = getPreviousToken()
                 val right = factor()
-                return@run Binary(this, operator, right)
+                return@run Expr.Binary(this, operator, right)
             }
             return@run this
         }
@@ -102,13 +102,13 @@ class ParserVerbose(private val scanner: Scanner, private val errorReporter: Err
             while (matchToken(TokenType.SLASH, TokenType.STAR)) {
                 val operator = getPreviousToken()
                 val right = unary()
-                return@run Binary(this, operator, right)
+                return@run Expr.Binary(this, operator, right)
             }
 
             while (matchToken(TokenType.PLUS, TokenType.MINUS)) {
                 val operator = getPreviousToken()
                 val right = term()
-                return@run Binary(this, operator, right)
+                return@run Expr.Binary(this, operator, right)
             }
             return@run this
         }
@@ -117,20 +117,20 @@ class ParserVerbose(private val scanner: Scanner, private val errorReporter: Err
         if (matchToken(TokenType.EXCLAMATION, TokenType.MINUS)) {
             val operator = getPreviousToken()
             val right = unary()
-            Unary(operator, right)
+            Expr.Unary(operator, right)
         } else {
             primary()
         }
 
     private fun primary(): Expr {
         if (matchToken(TokenType.TRUE, TokenType.FALSE, TokenType.NIL, TokenType.NUMBER, TokenType.STRING)) {
-            return Literal((getPreviousToken() as TokenLiteral).literal)
+            return Expr.Literal((getPreviousToken() as TokenLiteral).literal)
         }
 
         if(matchToken(TokenType.LEFT_PAREN)) {
             val expression = expression()
             consumeToken(TokenType.RIGHT_PAREN, EXPECTED_R_PAREN)
-            return Grouping(expression)
+            return Expr.Grouping(expression)
         }
 
         throw ParserException2(peek(), UNEXPECTED_PRIMARY_TOKEN.format(peek()))

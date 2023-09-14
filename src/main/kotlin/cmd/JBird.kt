@@ -1,9 +1,9 @@
 package cmd
 
 import execution.Interpreter
-import lexical.Scanner
+import syntactic.tokenizer.Tokenizer
 import reports.ErrorReporter
-import syntactic.Parser
+import syntactic.parser.Parser
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.nio.charset.Charset
@@ -12,14 +12,14 @@ import java.nio.file.Paths
 import kotlin.system.exitProcess
 
 class JBird(
-    private val scanReporter: ErrorReporter,
+    private val tokenizerReporter: ErrorReporter,
     private val parserReporter: ErrorReporter,
     private val runtimeReporter: ErrorReporter
 ) {
     fun executeFromFile(path: String) {
         val bytes = Files.readAllBytes(Paths.get(path))
         execute(String(bytes, Charset.defaultCharset()))
-        if (scanReporter.hadError() || parserReporter.hadError()) exitProcess(65)
+        if (tokenizerReporter.hadError() || parserReporter.hadError()) exitProcess(65)
         if (runtimeReporter.hadError()) exitProcess(70)
     }
 
@@ -31,14 +31,14 @@ class JBird(
             print("> ")
             reader.readLine()
                 ?.run(::execute)
-                .also { scanReporter.resetError(); parserReporter.resetError() }
+                .also { tokenizerReporter.resetError(); parserReporter.resetError() }
                 ?: break
         }
     }
 
     private fun execute(script: String) {
-        val scanner = Scanner(script, scanReporter)
-        val parser = Parser(scanner, parserReporter)
+        val tokenizer = Tokenizer(script, tokenizerReporter)
+        val parser = Parser(tokenizer, parserReporter)
         val interpreter = Interpreter(runtimeReporter)
         val program = parser.parse()
 
@@ -47,5 +47,5 @@ class JBird(
         interpreter.interpret(program)
     }
 
-    private fun checkError() = scanReporter.hadError() || parserReporter.hadError()
+    private fun checkError() = tokenizerReporter.hadError() || parserReporter.hadError()
 }

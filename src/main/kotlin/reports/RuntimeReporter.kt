@@ -1,7 +1,7 @@
 package reports
 
-import lexical.Token
-import lexical.TokenType
+import syntactic.tokenizer.Token
+import syntactic.tokenizer.TokenType
 
 class RuntimeReporter: ErrorReporter {
     private var hadError: Boolean = false

@@ -1,9 +1,9 @@
 package execution
 
-import lexical.Token
-import lexical.TokenType
+import syntactic.tokenizer.Token
+import syntactic.tokenizer.TokenType
 import reports.ErrorReporter
-import syntactic.*
+import syntactic.parser.*
 import kotlin.math.pow
 
 class Interpreter(private val errorReporter: ErrorReporter) : InterpreterVisitor {
@@ -14,7 +14,7 @@ class Interpreter(private val errorReporter: ErrorReporter) : InterpreterVisitor
         errorReporter.report(ex.token, ex.message)
     }
 
-    override fun visitBinaryExpr(binary: Binary): Any? = Pair(evaluate(binary.left), evaluate(binary.right))
+    override fun visitBinaryExpr(binary: Expr.Binary): Any? = Pair(evaluate(binary.left), evaluate(binary.right))
         .run {
             when (binary.operator.type) {
                 TokenType.MINUS -> assertNumberOperands(binary.operator, first, second) {
@@ -63,7 +63,7 @@ class Interpreter(private val errorReporter: ErrorReporter) : InterpreterVisitor
             }
         }
 
-    override fun visitUnaryExpr(unary: Unary): Any? = evaluate(unary.right)
+    override fun visitUnaryExpr(unary: Expr.Unary): Any? = evaluate(unary.right)
         .run {
             when (unary.prefix.type) {
                 TokenType.MINUS -> assertNumberOperands(unary.prefix, this) {
@@ -76,24 +76,32 @@ class Interpreter(private val errorReporter: ErrorReporter) : InterpreterVisitor
         }
 
 
-    override fun visitGroupingExpr(grouping: Grouping): Any? = evaluate(grouping.expr)
+    override fun visitGroupingExpr(grouping: Expr.Grouping): Any? = evaluate(grouping.expr)
 
-    override fun visitLiteralExpr(literal: Literal): Any? = literal.value
+    override fun visitLiteralExpr(literal: Expr.Literal): Any? = literal.value
 
-    override fun visitTernaryExpr(ternary: Ternary): Any? = evaluate(ternary.condition)
+    override fun visitTernaryExpr(ternary: Expr.Ternary): Any? = evaluate(ternary.condition)
         .run {
             if (isTruthy(this)) evaluate(ternary.thenBranch)
             else evaluate(ternary.otherwiseBranch)
         }
 
-    override fun visitExpressionStmt(stmt: ExpressionStmt) {
+    override fun visitVariableExpr(ternary: Expr.Variable): Any? {
+        TODO("Not yet implemented")
+    }
+
+    override fun visitExpressionStmt(stmt: Stmt.Expression) {
         evaluate(stmt.expr)
     }
 
-    override fun visitPrintStmt(stmt: PrintStmt) {
+    override fun visitPrintStmt(stmt: Stmt.Print) {
         evaluate(stmt.expr)
             .let(::stringify)
             .also(::println)
+    }
+
+    override fun visitVarStmt(stmt: Stmt.Var) {
+        TODO("Not yet implemented")
     }
 
     private fun evaluate(expr: Expr): Any? = expr.accept(this)

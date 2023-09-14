@@ -1,6 +1,6 @@
 package reports
 
-import lexical.Token
+import syntactic.tokenizer.Token
 
 interface ErrorReporter {
     fun report(line: Int, column: Int, message: String, where: String? = null)

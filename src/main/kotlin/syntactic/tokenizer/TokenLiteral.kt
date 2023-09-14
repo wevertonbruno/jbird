@@ -1,4 +1,4 @@
-package lexical
+package syntactic.tokenizer
 
 data class TokenLiteral(
     override val type: TokenType,

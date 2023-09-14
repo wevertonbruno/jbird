@@ -8,13 +8,17 @@ grouping -> L_PAREN expression R_PAREN;
 
 =======
 
-program -> statement* EOF;
+program -> declaration* EOF;
+
+declaration -> var_declaration | statement;
 
 statement -> expr_stmt | print_stmt;
 
 expr_stmt -> conditional_expression separator;
 
 print_stmt -> PRINT expression separator;
+
+var_declaration -> VAR IDENTIFIER (EQUAL expression)? separator;
 
 separator -> SEMICOLON | BREAK_LINE;
 
@@ -32,7 +36,7 @@ factor -> unary ( (MULTI | SLASH) unary ) *;
 
 unary -> (EXCLAMATION | MINUS) unary | primary;
 
-primary -> literal | grouping;
+primary -> literal | grouping | IDENTIFIER;
 
 ======
 

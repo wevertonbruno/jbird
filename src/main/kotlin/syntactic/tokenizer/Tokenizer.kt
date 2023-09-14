@@ -1,4 +1,4 @@
-package lexical
+package syntactic.tokenizer
 
 import reports.ErrorReporter
 
@@ -6,7 +6,7 @@ private const val BREAK_LINE = '\n'
 private const val DOUBLE_QUOTES = '"'
 private const val EOL = Char.MIN_VALUE
 
-class Scanner(
+class Tokenizer(
     private val script: String,
     private val errorReporter: ErrorReporter
 ) {

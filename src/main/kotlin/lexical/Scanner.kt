@@ -44,6 +44,7 @@ class Scanner(
             '-' -> createToken(TokenType.MINUS)
             '+' -> createToken(TokenType.PLUS)
             ';' -> createToken(TokenType.SEMICOLON)
+            '^' -> createToken(TokenType.POW)
             '*' -> createToken(TokenType.STAR)
             '?' -> createToken(TokenType.QUESTION)
             ':' -> createToken(TokenType.COLON)

@@ -20,8 +20,11 @@ enum class Precedence {
     Comparison,
     Term,
     Factor,
+    Exponential,
     Unary,
-    Primary
+    Primary;
+
+    fun getLesser() = if(this == None) None else entries[ordinal - 1]
 }
 
 class Parser(private val scanner: Scanner, private val errorReporter: ErrorReporter) {
@@ -34,6 +37,7 @@ class Parser(private val scanner: Scanner, private val errorReporter: ErrorRepor
             TokenType.MINUS -> Precedence.Term
             TokenType.STAR -> Precedence.Factor
             TokenType.SLASH -> Precedence.Factor
+            TokenType.POW -> Precedence.Exponential
             TokenType.EQUAL_EQUAL -> Precedence.Equality
             TokenType.NOT_EQUAL -> Precedence.Equality
             TokenType.GREATER -> Precedence.Comparison
@@ -42,7 +46,7 @@ class Parser(private val scanner: Scanner, private val errorReporter: ErrorRepor
             TokenType.LESS_EQUAL -> Precedence.Comparison
             TokenType.EXCLAMATION -> Precedence.Unary
             TokenType.QUESTION -> Precedence.Ternary
-            //TokenType.MINUS -> Precedence.Unary
+            TokenType.LEFT_PAREN -> Precedence.Primary
             else -> Precedence.None
         }
     }
@@ -121,7 +125,8 @@ class Parser(private val scanner: Scanner, private val errorReporter: ErrorRepor
             TokenType.PLUS,
             TokenType.MINUS,
             TokenType.SLASH,
-            TokenType.STAR -> binary(left)
+            TokenType.STAR,
+            TokenType.POW -> binary(left)
 
             TokenType.QUESTION -> ternary(left)
 
@@ -132,7 +137,10 @@ class Parser(private val scanner: Scanner, private val errorReporter: ErrorRepor
         val precedence = getPrecedence(peek().type)
         advanceCursor()
         val operator = getPreviousToken()
-        val right = parseExpr(precedence)
+        val right = if (operator.type.isRightAssociative)
+            parseExpr(precedence.getLesser())
+        else
+            parseExpr(precedence)
         return Binary(left, operator, right)
     }
 

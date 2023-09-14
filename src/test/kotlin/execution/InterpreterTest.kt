@@ -14,6 +14,9 @@ import java.util.stream.Stream
 class InterpreterTest {
     private fun getTestSource() = Stream.of(
         Arguments.of("""(1 + 3) * 5;""", 20.0),
+        Arguments.of("""2^2^3;""", 256.0),
+        Arguments.of("""1 - 2 + 3;""", -2.0),
+        Arguments.of("""false ? 5 : 3 < 4 ? 2 : 3 ;""", 2),
         Arguments.of("""42 > 42 ? 42 : 43 > 42 ? 0 : 1;""", 0),
         Arguments.of(""" "one" + ("_" + 1); """, "one_1"),
         Arguments.of(""" print 1 + 2 + 3 + 4 - 5 * 3 > 0; """, "one_1"),

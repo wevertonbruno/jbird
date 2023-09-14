@@ -1,6 +1,6 @@
 package lexical
 
-enum class TokenType {
+enum class TokenType(val isRightAssociative: Boolean = false) {
     // Single-character tokens.
     LEFT_PAREN,
     RIGHT_PAREN,
@@ -13,14 +13,15 @@ enum class TokenType {
     SEMICOLON,
     SLASH,
     STAR,
-    QUESTION,
+    QUESTION(true),
     COLON,
     BREAK_LINE,
+    POW(true),
 
     // One or two character tokens.
     EXCLAMATION,
     NOT_EQUAL,
-    EQUAL,
+    EQUAL(true),
     EQUAL_EQUAL,
     GREATER,
     GREATER_EQUAL,

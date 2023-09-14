@@ -4,6 +4,7 @@ import lexical.Token
 import lexical.TokenType
 import reports.ErrorReporter
 import syntactic.*
+import kotlin.math.pow
 
 class Interpreter(private val errorReporter: ErrorReporter) : InterpreterVisitor {
 
@@ -28,6 +29,10 @@ class Interpreter(private val errorReporter: ErrorReporter) : InterpreterVisitor
 
                 TokenType.STAR -> assertNumberOperands(binary.operator, first, second) {
                     double(first as Number) * double(second as Number)
+                }
+
+                TokenType.POW -> assertNumberOperands(binary.operator, first, second) {
+                    double(first as Number).pow(double(second as Number))
                 }
 
                 TokenType.PLUS -> when {

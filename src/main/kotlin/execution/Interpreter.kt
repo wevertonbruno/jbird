@@ -151,7 +151,7 @@ class Interpreter(private val errorReporter: ErrorReporter) : InterpreterVisitor
 
     private fun isStringOrNumber(value: Any?): Boolean = value is String || value is Number
 
-    private fun stringify(value: Any?): String = value?.let { value.toString() } ?: ""
+    private fun stringify(value: Any?): String = value?.let { value.toString() } ?: "nil"
 
     private fun executeBlock(statements: List<Stmt>, environment: Environment) {
         val previous = this.environment

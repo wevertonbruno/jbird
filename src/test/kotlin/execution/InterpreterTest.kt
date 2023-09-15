@@ -46,6 +46,20 @@ class InterpreterTest {
                 }
             }
         """.trimIndent(), "one_1"),
+        Arguments.of(""" 
+            var a;
+            var b = nil;
+            a = "assigned";
+            print a; // OK, was assigned first.
+            print b; // Nil
+        """.trimIndent(), "one_1"),
+        Arguments.of(""" 
+            var a = 1;
+            {
+                 var a = a + 2;
+                 print a;
+            }
+        """.trimIndent(), "one_1"),
     )
 
     @ParameterizedTest

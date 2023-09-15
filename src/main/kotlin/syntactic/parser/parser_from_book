@@ -1,4 +1,4 @@
-package syntactic.parser/*
+package syntactic.parser
 package syntactic
 
 import syntactic.tokenizer.Scanner
@@ -186,4 +186,3 @@ class ParserVerbose(private val scanner: Scanner, private val errorReporter: Err
         }
     }
 }
-*/

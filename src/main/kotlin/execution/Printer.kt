@@ -26,4 +26,8 @@ class Printer : Expr.Visitor<String> {
     override fun visitVariableExpr(ternary: Expr.Variable): String {
         TODO("Not yet implemented")
     }
+
+    override fun visitAssignExpr(assign: Expr.Assign): String {
+        TODO("Not yet implemented")
+    }
 }

@@ -10,9 +10,11 @@ grouping -> L_PAREN expression R_PAREN;
 
 program -> declaration* EOF;
 
-declaration -> var_declaration | statement;
+declaration -> ( var_declaration | statement ) {NL};
 
-statement -> expr_stmt | print_stmt;
+statement -> expr_stmt | print_stmt | block_stmt;
+
+block_stmt -> L_BRACE {NL} declaration* {NL} R_BRACE;
 
 expr_stmt -> conditional_expression separator;
 
@@ -24,7 +26,9 @@ separator -> SEMICOLON | BREAK_LINE;
 
 conditional_expression -> expression | expression ? expression : conditional_expression;
 
-expression -> equality;
+expression -> assigment;
+
+assigment -> IDENTIFIER EQUAL assigment | equality;
 
 equality -> comparison ( ( EQUAL_EQUAL | NOT_EQUAL ) comparison ) *;
 
@@ -37,6 +41,8 @@ factor -> unary ( (MULTI | SLASH) unary ) *;
 unary -> (EXCLAMATION | MINUS) unary | primary;
 
 primary -> literal | grouping | IDENTIFIER;
+
+NL -> NEW_LINE;
 
 ======
 

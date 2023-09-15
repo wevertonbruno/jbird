@@ -21,6 +21,31 @@ class InterpreterTest {
         Arguments.of(""" "one" + ("_" + 1); """, "one_1"),
         Arguments.of(""" print 1 + 2 + 3 + 4 - 5 * 3 > 0; """, "one_1"),
         Arguments.of(""" print "Hello, World!"${"\n"} """, "one_1"),
+        Arguments.of("""
+            var a = 4
+            var b = 2
+            print a * b;
+        """.trimIndent(), "one_1"),
+        Arguments.of("""
+            var a = 4
+            var b = 2
+            print a * b;
+            a = 3
+            print a + b;
+        """.trimIndent(), "one_1"),
+        Arguments.of(""" 
+            {
+                var a = 3; var b = 2
+                print a * b;
+                {
+                    print a * b;
+                    {
+                        a = 5
+                        print a * b;
+                    }
+                }
+            }
+        """.trimIndent(), "one_1"),
     )
 
     @ParameterizedTest

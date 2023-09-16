@@ -1,4 +1,4 @@
-package syntactic.ast
+package syntactic.parser
 
 import execution.Printer
 import syntactic.tokenizer.Token

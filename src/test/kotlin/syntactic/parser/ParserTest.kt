@@ -1,4 +1,4 @@
-package syntactic
+package syntactic.parser
 
 import execution.Interpreter
 import io.mockk.mockk
@@ -8,7 +8,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.junit.jupiter.api.BeforeEach
-import syntactic.parser.*
+import org.junit.jupiter.api.assertDoesNotThrow
 import java.util.stream.Stream
 import kotlin.reflect.KClass
 import kotlin.test.assertEquals
@@ -26,28 +26,28 @@ class ParserTest {
 
     private fun getExpressionTestSource() = Stream.of(
         Arguments.of("""(1 + 3) * 5""", Expr.Binary::class, fun (expr: Expr) {
-            assertEquals(20, expr.accept(interpreter).value)
+            assertEquals(20, expr.accept(interpreter))
         }),
         Arguments.of("""42 > 42 ? 42 : 43 > 42 ? 0 : 1""", Expr.Ternary::class, fun (expr: Expr) {
-            assertEquals(0, expr.accept(interpreter).value)
+            assertEquals(0, expr.accept(interpreter))
         }),
         Arguments.of("""5+4-(2*5+3)""", Expr.Binary::class, fun (expr: Expr) {
-            assertEquals(-4, expr.accept(interpreter).value)
+            assertEquals(-4, expr.accept(interpreter))
         }),
         Arguments.of(""" 10 -5 *2""", Expr.Binary::class, fun (expr: Expr) {
-            assertEquals(0, expr.accept(interpreter).value)
+            assertEquals(0, expr.accept(interpreter))
         }),
         Arguments.of("""5+4-(2*5+3) > 10 -5 *2""", Expr.Binary::class, fun (expr: Expr) {
-            assertEquals(false, expr.accept(interpreter).value)
+            assertEquals(false, expr.accept(interpreter))
         }),
         Arguments.of("""2+((3-1)*2)""", Expr.Binary::class, fun (expr: Expr) {
-            assertEquals(6, expr.accept(interpreter).value)
+            assertEquals(6, expr.accept(interpreter))
         }),
         Arguments.of("""2+((3.5-1)*2)""", Expr.Binary::class, fun (expr: Expr) {
-            assertEquals(7.0, expr.accept(interpreter).value)
+            assertEquals(7.0, expr.accept(interpreter))
         }),
         Arguments.of("""3 > (5*2 > 9 ? 1 : 0)""", Expr.Binary::class, fun (expr: Expr) {
-            assertEquals(true, expr.accept(interpreter).value)
+            assertEquals(true, expr.accept(interpreter))
         }),
     )
 
@@ -61,6 +61,20 @@ class ParserTest {
             assertEquals("test", stmt.identifier.lexeme)
             assertTrue(stmt.expr is Expr.Binary)
         }),
+
+        Arguments.of("""{ var b; var a = b = 3; print a + b; }""", Stmt.Block::class, fun (stmt: Stmt.Block) {
+            assertDoesNotThrow { stmt.accept(interpreter) }
+        }),
+        Arguments.of("""
+            if (a < 10) {
+                var b = 10
+                a = a + b
+                if (a < 10) 
+                    print a
+                else
+                    print b
+            }
+            """.trimIndent(), Stmt.If::class, fun (stmt: Stmt.If) {}),
     )
 
     @ParameterizedTest
@@ -85,6 +99,7 @@ class ParserTest {
                 val parser = Parser(it, mockk())
                 StmtParser(parser, ExprParser(parser))
             }
+
         val stmt = assertNotNull(stmtParser.parseDeclarationStmt())
         assertEquals(type, stmt::class)
         accept(stmt)

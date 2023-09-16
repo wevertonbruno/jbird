@@ -1,4 +1,4 @@
-package lexical
+package syntactic.tokenizer
 
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -8,9 +8,6 @@ import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import reports.DefaultErrorReporter
 import reports.ErrorReporter
-import syntactic.tokenizer.Tokenizer
-import syntactic.tokenizer.TokenLiteral
-import syntactic.tokenizer.TokenType
 import java.util.stream.Stream
 import kotlin.reflect.KClass
 import kotlin.test.assertEquals

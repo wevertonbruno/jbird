@@ -15,7 +15,7 @@ enum class TokenType(val isRightAssociative: Boolean = false) {
     STAR,
     QUESTION(true),
     COLON,
-    BREAK_LINE,
+    NEW_LINE,
     POW(true),
 
     // One or two character tokens.

@@ -60,7 +60,20 @@ class InterpreterTest {
                  print a;
             }
         """.trimIndent(), "one_1"),
+        Arguments.of("""
+            var a = 1;
+            if (a < 10) {
+                var b = 10
+                a = a + b
+                if (a < 10) 
+                    print a
+                else
+                    print b
+            }
+            """.trimIndent(), ""),
     )
+
+
 
     @ParameterizedTest
     @MethodSource("getTestSource")

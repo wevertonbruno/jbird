@@ -61,7 +61,7 @@ class Tokenizer(
             }
 
             ' ', '\r', '\t' -> return
-            BREAK_LINE -> { incrementLine(); createToken(TokenType.BREAK_LINE) }
+            BREAK_LINE -> { incrementLine(); createToken(TokenType.NEW_LINE) }
             DOUBLE_QUOTES -> createStringLiteral()
             else -> {
                 // Check for numbers

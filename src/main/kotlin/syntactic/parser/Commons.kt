@@ -11,9 +11,12 @@ internal fun Parser.consumeToken(type: TokenType, message: String? = null): Toke
     throw ParserException(peek(), message ?: EXPECTED_TOKEN.format(peek().lexeme))
 }
 
-internal fun Parser.consumeSeparator(): Token {
-    if (checkToken(TokenType.SEMICOLON) || checkToken(TokenType.BREAK_LINE)) return advanceCursor()
-    throw ParserException(peek(), EXPECTED_SEPARATOR)
+internal fun Parser.consumeSeparator() {
+    // Throw an exception if is not a separator or EOF
+    if (peek().type != TokenType.SEMICOLON && peek().type != TokenType.NEW_LINE && !isEOF()) {
+        throw ParserException(peek(), EXPECTED_SEPARATOR)
+    }
+    advanceCursor()
 }
 
 internal fun Parser.matchToken(vararg tokenTypes: TokenType): Boolean {
@@ -28,6 +31,7 @@ internal fun Parser.matchToken(vararg tokenTypes: TokenType): Boolean {
 
 internal fun Parser.checkToken(type: TokenType): Boolean {
     if (isEOF()) return false
+    consumeNL()
     return peek().type == type
 }
 
@@ -43,7 +47,9 @@ internal fun Parser.peek(): Token = getTokens()[currentCursor]
 internal fun Parser.isEOF() = peek().type == TokenType.EOF
 
 internal fun Parser.consumeNL() {
-    while (matchToken(TokenType.BREAK_LINE));
+    while (peek().type == TokenType.NEW_LINE){
+        advanceCursor()
+    }
 }
 
 

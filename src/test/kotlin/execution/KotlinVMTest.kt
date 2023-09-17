@@ -11,7 +11,7 @@ import syntactic.parser.Parser
 import java.util.stream.Stream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class InterpreterTest {
+class KotlinVMTest {
     private fun getTestSource() = Stream.of(
         Arguments.of("""(1 + 3) * 5;""", 20.0),
         Arguments.of("""2^2^3;""", 256.0),
@@ -71,6 +71,28 @@ class InterpreterTest {
                     print b
             }
             """.trimIndent(), ""),
+        Arguments.of("""
+            var a = 5;
+            while(a >= 0) {
+                print a
+                a = a - 1
+            }
+            """.trimIndent(), ""),
+        Arguments.of("""
+            print "======= Do While ======"
+            var a = 5;
+            do {
+                print a
+                a = a - 1
+            }while(a > 0);
+            """.trimIndent(), ""),
+        Arguments.of("""
+            print "======= Def functions ======"
+            func sayHi(first, last) {
+                print "Hi, " + first + " " + last + "!"
+            }
+            sayHi("Dear", "Reader");
+            """.trimIndent(), ""),
     )
 
 
@@ -80,11 +102,11 @@ class InterpreterTest {
     fun itShouldInterpreterSuccessfully(script: String, expected: Any?) {
         val tokenizer = Tokenizer(script, mockk())
         val parser = Parser(tokenizer, mockk())
-        val interpreter = Interpreter(mockk())
+        val kotlinVM = KotlinVM(mockk())
 
         assertDoesNotThrow {
             val program = parser.parse()
-            interpreter.interpret(program)
+            kotlinVM.run(program)
         }
     }
 }

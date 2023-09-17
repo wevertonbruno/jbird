@@ -8,7 +8,7 @@ class Keywords {
             Pair("else", TokenType.ELSE),
             Pair("false", TokenType.FALSE),
             Pair("for", TokenType.FOR),
-            Pair("fun", TokenType.FUNC),
+            Pair("func", TokenType.FUNC),
             Pair("if", TokenType.IF),
             Pair("nil", TokenType.NIL),
             Pair("or", TokenType.OR),
@@ -18,7 +18,8 @@ class Keywords {
             Pair("this", TokenType.THIS),
             Pair("true", TokenType.TRUE),
             Pair("var", TokenType.VAR),
-            Pair("while", TokenType.WHILE)
+            Pair("while", TokenType.WHILE),
+            Pair("do", TokenType.DO),
         )
 
         private val literals = mapOf<String, TokenType>(

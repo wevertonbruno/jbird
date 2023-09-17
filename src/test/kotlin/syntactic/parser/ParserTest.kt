@@ -1,6 +1,6 @@
 package syntactic.parser
 
-import execution.Interpreter
+import execution.KotlinVM
 import io.mockk.mockk
 import syntactic.tokenizer.Tokenizer
 import org.junit.jupiter.api.TestInstance
@@ -17,11 +17,11 @@ import kotlin.test.assertTrue
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ParserTest {
-    private lateinit var interpreter: InterpreterVisitor
+    private lateinit var interpreter: VM
 
     @BeforeEach
     fun setUp() {
-        interpreter = Interpreter(mockk())
+        interpreter = KotlinVM(mockk())
     }
 
     private fun getExpressionTestSource() = Stream.of(

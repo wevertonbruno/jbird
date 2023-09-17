@@ -1,5 +1,6 @@
 package syntactic.parser
 
+import syntactic.tokenizer.Token
 import syntactic.tokenizer.TokenType
 
 class StmtParser(private val parser: Parser, private val exprParser: ExprParser) {
@@ -26,6 +27,9 @@ class StmtParser(private val parser: Parser, private val exprParser: ExprParser)
             parser.matchToken(TokenType.IF) -> parseIfStmt()
             parser.matchToken(TokenType.PRINT) -> parsePrintStmt()
             parser.matchToken(TokenType.LEFT_BRACE) -> parseBlockStmt()
+            parser.matchToken(TokenType.WHILE) -> parseWhileStmt()
+            parser.matchToken(TokenType.DO) -> parseDoWhileStmt()
+            parser.matchToken(TokenType.FUNC) -> parseFunctionStmt("function")
             else -> parseExpressionStmt()
         }
     }
@@ -48,6 +52,24 @@ class StmtParser(private val parser: Parser, private val exprParser: ExprParser)
                 Stmt.Print(it)
             }
 
+    private fun parseFunctionStmt(kind: String): Stmt {
+        val name = parser.consumeToken(TokenType.IDENTIFIER, "Expect $kind name.")
+        parser.consumeToken(TokenType.LEFT_PAREN, "Expect '(' after $kind name.")
+        val params = mutableListOf<Token>()
+        if (!parser.checkToken(TokenType.RIGHT_PAREN)) {
+            params.add(parser.consumeToken(TokenType.IDENTIFIER, "Expect parameter name."))
+            while (parser.matchToken(TokenType.COMMA)) {
+                if (params.size >= 255) {
+                    throw ParserException(parser.peek(), "Cannot have more than 255 parameters.")
+                }
+                params.add(parser.consumeToken(TokenType.IDENTIFIER, "Expect parameter name."))
+            }
+        }
+        parser.consumeToken(TokenType.RIGHT_PAREN, "Expect ')' after parameters.")
+        parser.consumeToken(TokenType.LEFT_BRACE, "Expect '{' before $kind body.")
+        return Stmt.Function(name, params, parseBlockStmt())
+    }
+
     private fun parseIfStmt(): Stmt {
         parser.consumeToken(TokenType.LEFT_PAREN, "Expect '(' after 'if'.")
         val condition = exprParser.parse(Precedence.None)
@@ -58,6 +80,24 @@ class StmtParser(private val parser: Parser, private val exprParser: ExprParser)
             elseBranch = parseStatement()
         }
         return Stmt.If(condition, thenBranch, elseBranch)
+    }
+
+    private fun parseWhileStmt(): Stmt {
+        parser.consumeToken(TokenType.LEFT_PAREN, "Expect '(' after 'while'.")
+        val condition = exprParser.parse(Precedence.None)
+        parser.consumeToken(TokenType.RIGHT_PAREN, "Expect ')' after 'while'.")
+        val body = parseStatement()
+        return Stmt.While(condition, body)
+    }
+
+    private fun parseDoWhileStmt(): Stmt {
+        val stmt = parseStatement()
+        parser.consumeToken(TokenType.WHILE, "Expecting 'while' followed by a post-condition")
+        parser.consumeToken(TokenType.LEFT_PAREN, "Expect '(' after 'while'.")
+        val condition = exprParser.parse(Precedence.None)
+        parser.consumeToken(TokenType.RIGHT_PAREN, "Expect ')' after 'while'.")
+        parser.consumeSeparator()
+        return Stmt.DoWhile(condition, stmt)
     }
 
     private fun parseExpressionStmt() =

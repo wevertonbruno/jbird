@@ -1,21 +1,33 @@
 package execution
 
 import reports.ErrorReporter
-import syntactic.parser.Expr
-import syntactic.parser.InterpreterVisitor
-import syntactic.parser.Program
-import syntactic.parser.Stmt
+import syntactic.parser.*
 import syntactic.tokenizer.TokenType
 import kotlin.math.pow
 
-class Interpreter(private val errorReporter: ErrorReporter) : InterpreterVisitor {
-    private var environment = Environment()
+class KotlinVM(private val errorReporter: ErrorReporter) : VM {
+    private val globals = Environment()
+    private var environment = globals
 
-    fun interpret(program: Program?) = try {
+    init {
+        globals.define("time", object : BirdCallable {
+            override fun call(vm: VM, arguments: List<Any>): Any {
+                return (System.currentTimeMillis() / 1000.0)
+            }
+
+            override fun arity() = 0
+
+            override fun toString() = "<builtin function 'time'>"
+        })
+    }
+
+    fun run(program: Program?) = try {
         program?.accept(this)
     } catch (ex: RuntimeError) {
         errorReporter.report(ex.token, ex.message)
     }
+
+    override fun getGlobals() = globals
 
     override fun visitBinaryExpr(binary: Expr.Binary): Any = run {
         val first = evaluate(binary.left)
@@ -126,6 +138,27 @@ class Interpreter(private val errorReporter: ErrorReporter) : InterpreterVisitor
         return value
     }
 
+    override fun visitLogicalExpr(logical: Expr.Logical): Any {
+        val left = evaluate(logical.left)
+        if (logical.operator.type == TokenType.OR) {
+            if (isTruthy(left)) return left
+        }else {
+            if (!isTruthy(left)) return left
+        }
+        return evaluate(logical.right)
+    }
+
+    override fun visitCallExpr(call: Expr.Call): Any {
+        val callee = evaluate(call.callee)
+
+        if (callee !is BirdCallable) throw RuntimeError(call.paren, "Can only call functions and classes.")
+        val arguments = call.arguments.map { evaluate(it) }
+        return (callee as BirdCallable).also{
+            if(arguments.size != it.arity())
+                throw RuntimeError(call.paren, "Expected ${it.arity()} arguments but got ${arguments.size}.")
+        }.call(this, arguments)
+    }
+
     override fun visitExpressionStmt(expr: Stmt.Expression) = evaluate(expr.expr)
 
     override fun visitPrintStmt(expr: Stmt.Print) =
@@ -151,6 +184,23 @@ class Interpreter(private val errorReporter: ErrorReporter) : InterpreterVisitor
         }
     }
 
+    override fun visitWhileStmt(stmt: Stmt.While) {
+        while (isTruthy(evaluate(stmt.condition))) {
+            stmt.body.accept(this)
+        }
+    }
+
+    override fun visitDoWhileStmt(stmt: Stmt.DoWhile) {
+        do {
+            stmt.body.accept(this)
+        } while (isTruthy(evaluate(stmt.condition)))
+    }
+
+    override fun visitFunctionStmt(function: Stmt.Function) {
+        val func = BirdFunction(function)
+        environment.define(function.name.lexeme, func)
+    }
+
     private fun evaluate(expr: Expr): Any = expr.accept(this)
 
     private fun isTruthy(value: Any): Boolean = when (value) {
@@ -163,11 +213,11 @@ class Interpreter(private val errorReporter: ErrorReporter) : InterpreterVisitor
 
     private fun stringify(value: Any): String = value.let { value.toString() }
 
-    private fun executeBlock(statements: List<Stmt>, environment: Environment): Any {
+    override fun executeBlock(statements: List<Stmt>, env: Environment): Any {
         val previous = this.environment
         var value: Any = Nil
         try {
-            this.environment = environment
+            this.environment = env
             statements.forEach {
                 value = it.accept(this)
             }
@@ -176,9 +226,5 @@ class Interpreter(private val errorReporter: ErrorReporter) : InterpreterVisitor
         }
 
         return value
-    }
-
-    object Nil {
-        override fun toString() = "nil"
     }
 }

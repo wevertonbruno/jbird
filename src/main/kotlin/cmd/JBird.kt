@@ -1,6 +1,6 @@
 package cmd
 
-import execution.Interpreter
+import execution.KotlinVM
 import syntactic.tokenizer.Tokenizer
 import reports.ErrorReporter
 import syntactic.parser.Parser
@@ -39,12 +39,12 @@ class JBird(
     private fun execute(script: String) {
         val tokenizer = Tokenizer(script, tokenizerReporter)
         val parser = Parser(tokenizer, parserReporter)
-        val interpreter = Interpreter(runtimeReporter)
+        val kotlinVM = KotlinVM(runtimeReporter)
         val program = parser.parse()
 
         if (checkError()) return
 
-        interpreter.interpret(program)
+        kotlinVM.run(program)
     }
 
     private fun checkError() = tokenizerReporter.hadError() || parserReporter.hadError()

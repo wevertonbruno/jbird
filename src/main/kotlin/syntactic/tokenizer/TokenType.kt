@@ -50,6 +50,7 @@ enum class TokenType(val isRightAssociative: Boolean = false) {
     TRUE,
     VAR,
     WHILE,
+    DO,
 
     //end of file
     EOF

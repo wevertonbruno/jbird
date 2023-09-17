@@ -1,5 +1,6 @@
 package syntactic.parser
 
+import execution.Environment
 import syntactic.tokenizer.Token
 
 abstract class Expr {
@@ -13,6 +14,8 @@ abstract class Expr {
         fun visitTernaryExpr(ternary: Ternary): T
         fun visitVariableExpr(variable: Variable): T
         fun visitAssignExpr(assign: Assign): T
+        fun visitLogicalExpr(logical: Logical): T
+        fun visitCallExpr(call: Call): T
     }
      
     class Binary(val left: Expr, val operator: Token, val right: Expr) : Expr() {
@@ -42,6 +45,14 @@ abstract class Expr {
     class Assign(val name: Token, val value: Expr): Expr() {
         override fun <T> accept(visitor: Visitor<T>): T = run(visitor::visitAssignExpr)
     }
+
+    class Logical(val left: Expr, val operator: Token, val right: Expr): Expr() {
+        override fun <T> accept(visitor: Visitor<T>): T = run(visitor::visitLogicalExpr)
+    }
+
+    class Call(val callee: Expr, val paren: Token, val arguments: List<Expr>): Expr() {
+        override fun <T> accept(visitor: Visitor<T>): T = run(visitor::visitCallExpr)
+    }
 }
 
 abstract class Stmt {
@@ -53,6 +64,9 @@ abstract class Stmt {
         fun visitVarStmt(stmt: Var): T
         fun visitBlockStmt(stmt: Block): T
         fun visitIfStmt(stmt: If): T
+        fun visitWhileStmt(stmt: While): T
+        fun visitDoWhileStmt(stmt: DoWhile): T
+        fun visitFunctionStmt(function: Function): T
     }
 
     class Expression(val expr: Expr): Stmt() {
@@ -74,15 +88,34 @@ abstract class Stmt {
     class If(val condition: Expr, val thenBranch: Stmt, val elseBranch: Stmt?): Stmt() {
         override fun <T> accept(visitor: Visitor<T>): T = run (visitor::visitIfStmt)
     }
+
+    class While(val condition: Expr, val body: Stmt): Stmt() {
+        override fun <T> accept(visitor: Visitor<T>): T = run (visitor::visitWhileStmt)
+    }
+
+    class DoWhile(val condition: Expr, val body: Stmt): Stmt() {
+        override fun <T> accept(visitor: Visitor<T>): T = run (visitor::visitDoWhileStmt)
+    }
+
+    class Function(val name: Token, val params: List<Token>, val body: Block): Stmt() {
+        override fun <T> accept(visitor: Visitor<T>): T = run (visitor::visitFunctionStmt)
+    }
 }
 
-interface InterpreterVisitor : Expr.Visitor<Any>, Stmt.Visitor<Any>
+interface VM : Expr.Visitor<Any>, Stmt.Visitor<Any> {
+    fun getGlobals(): Environment
+    fun executeBlock(statements: List<Stmt>, env: Environment): Any
+}
 
 class Program {
     private val statements = mutableListOf<Stmt>()
     companion object { fun newInstance() = Program() }
     fun addStatement(stmt: Stmt) = statements.add(stmt)
-    fun accept(visitor: InterpreterVisitor) = statements.forEach { it.accept(visitor) }
+    fun accept(visitor: VM) = statements.forEach { it.accept(visitor) }
+}
+
+object Nil {
+    override fun toString() = "nil"
 }
 
 

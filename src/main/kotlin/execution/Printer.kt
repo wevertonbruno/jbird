@@ -30,4 +30,12 @@ class Printer : Expr.Visitor<String> {
     override fun visitAssignExpr(assign: Expr.Assign): String {
         TODO("Not yet implemented")
     }
+
+    override fun visitLogicalExpr(logical: Expr.Logical): String {
+        TODO("Not yet implemented")
+    }
+
+    override fun visitCallExpr(call: Expr.Call): String {
+        TODO("Not yet implemented")
+    }
 }

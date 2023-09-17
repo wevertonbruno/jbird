@@ -9,6 +9,8 @@ private const val UNEXPECTED_PRIMARY_TOKEN = "Unexpected token %s. Expected a li
 enum class Precedence {
     None,
     Assignment,
+    Or,
+    And,
     Ternary,
     Equality,
     Comparison,
@@ -16,6 +18,7 @@ enum class Precedence {
     Factor,
     Exponential,
     Unary,
+    Call,
     Primary;
 
     fun getLesser() = if (this == None) None else entries[ordinal - 1]
@@ -66,12 +69,15 @@ class ExprParser(private val parser: Parser) {
             TokenType.POW -> binary(left)
             TokenType.QUESTION -> ternary(left)
             TokenType.EQUAL -> assigment(left)
+            TokenType.OR,
+            TokenType.AND -> logical(left)
+            TokenType.LEFT_PAREN -> call(left)
 
             else -> throw ParserException(parser.peek(), UNEXPECTED_TOKEN.format(parser.peek()))
         }
 
     private fun assigment(left: Expr): Expr {
-        parser.advanceCursor()
+        parser.consumeNextToken()
         val right = parse(Precedence.None)
         return when(left) {
             is Expr.Variable -> Expr.Assign(left.identifier, right)
@@ -79,9 +85,31 @@ class ExprParser(private val parser: Parser) {
         }
     }
 
+    private fun logical(left: Expr): Expr {
+        val operator = parser.consumeNextToken()
+        val right = parse(getPrecedence(operator.type))
+        return Expr.Logical(left, operator, right)
+    }
+
+    private fun call(left: Expr): Expr {
+        val paren = parser.consumeNextToken()
+        val arguments = mutableListOf<Expr>()
+        if (!parser.checkToken(TokenType.RIGHT_PAREN)) {
+            do {
+                // limit argument count to 255
+                if (arguments.size >= 255) {
+                    throw ParserException(parser.peek(), "Can not have more than 255 arguments.")
+                }
+                arguments.add(parse(Precedence.None))
+            } while (parser.matchToken(TokenType.COMMA))
+        }
+        parser.consumeToken(TokenType.RIGHT_PAREN, "Expected ')' after arguments.")
+        return Expr.Call(left, paren, arguments)
+    }
+
     private fun binary(left: Expr): Expr {
         val precedence = getPrecedence(parser.peek().type)
-        parser.advanceCursor()
+        parser.consumeNextToken()
         val operator = parser.getPreviousToken()
         val right = if (operator.type.isRightAssociative)
             parse(precedence.getLesser())
@@ -91,9 +119,9 @@ class ExprParser(private val parser: Parser) {
     }
 
     private fun ternary(left: Expr): Expr {
-        parser.advanceCursor()
+        parser.consumeNextToken()
         val consequence = parse(Precedence.None)
-        parser.advanceCursor()
+        parser.consumeNextToken()
         val alternative = parse(Precedence.None)
         return Expr.Ternary(left, consequence, alternative)
     }
@@ -111,12 +139,12 @@ class ExprParser(private val parser: Parser) {
             TokenType.NIL,
             TokenType.NUMBER,
             TokenType.STRING -> {
-                parser.advanceCursor()
+                parser.consumeNextToken()
                 Expr.Literal((parser.getPreviousToken() as TokenLiteral).literal)
             }
 
             TokenType.IDENTIFIER -> {
-                parser.advanceCursor()
+                parser.consumeNextToken()
                 Expr.Variable(parser.getPreviousToken())
             }
 
@@ -145,8 +173,10 @@ class ExprParser(private val parser: Parser) {
             TokenType.LESS_EQUAL -> Precedence.Comparison
             TokenType.EXCLAMATION -> Precedence.Unary
             TokenType.QUESTION -> Precedence.Ternary
-            TokenType.LEFT_PAREN -> Precedence.Primary
+            TokenType.LEFT_PAREN -> Precedence.Call
             TokenType.EQUAL -> Precedence.Assignment
+            TokenType.OR -> Precedence.Or
+            TokenType.AND -> Precedence.And
             else -> Precedence.None
         }
     }

@@ -7,7 +7,7 @@ private const val EXPECTED_TOKEN = "Expect token '%s'"
 private const val EXPECTED_SEPARATOR = "Expect separator ';' or Newline"
 
 internal fun Parser.consumeToken(type: TokenType, message: String? = null): Token {
-    if (checkToken(type)) return advanceCursor()
+    if (checkToken(type)) return consumeNextToken()
     throw ParserException(peek(), message ?: EXPECTED_TOKEN.format(peek().lexeme))
 }
 
@@ -16,13 +16,13 @@ internal fun Parser.consumeSeparator() {
     if (peek().type != TokenType.SEMICOLON && peek().type != TokenType.NEW_LINE && !isEOF()) {
         throw ParserException(peek(), EXPECTED_SEPARATOR)
     }
-    advanceCursor()
+    consumeNextToken()
 }
 
 internal fun Parser.matchToken(vararg tokenTypes: TokenType): Boolean {
     tokenTypes.forEach {
         if (checkToken(it)) {
-            advanceCursor()
+            consumeNextToken()
             return true
         }
     }
@@ -35,7 +35,7 @@ internal fun Parser.checkToken(type: TokenType): Boolean {
     return peek().type == type
 }
 
-internal fun Parser.advanceCursor(): Token {
+internal fun Parser.consumeNextToken(): Token {
     if (!isEOF()) currentCursor++
     return getPreviousToken()
 }
@@ -48,13 +48,13 @@ internal fun Parser.isEOF() = peek().type == TokenType.EOF
 
 internal fun Parser.consumeNL() {
     while (peek().type == TokenType.NEW_LINE){
-        advanceCursor()
+        consumeNextToken()
     }
 }
 
 
 internal fun Parser.sync() {
-    advanceCursor()
+    consumeNextToken()
 
     while (!isEOF()) {
         if (getPreviousToken().type == TokenType.SEMICOLON) return
@@ -63,7 +63,7 @@ internal fun Parser.sync() {
             TokenType.CLASS, TokenType.FUNC, TokenType.VAR, TokenType.FOR,
             TokenType.IF, TokenType.WHILE, TokenType.PRINT, TokenType.RETURN -> return
 
-            else -> advanceCursor()
+            else -> consumeNextToken()
         }
     }
 }

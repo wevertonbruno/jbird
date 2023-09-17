@@ -19,6 +19,9 @@ internal fun Parser.consumeSeparator() {
     consumeNextToken()
 }
 
+internal fun Parser.checkSeparator() =
+    peek().type == TokenType.SEMICOLON || peek().type == TokenType.NEW_LINE
+
 internal fun Parser.matchToken(vararg tokenTypes: TokenType): Boolean {
     tokenTypes.forEach {
         if (checkToken(it)) {

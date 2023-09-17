@@ -12,9 +12,11 @@ program -> declaration* EOF;
 
 declaration -> {NL} ( var_declaration | func_declaration | statement );
 
-statement -> {NL} (expr_stmt | print_stmt | block_stmt | if_statement | while_statement | do_while_stmt);
+statement -> {NL} (expr_stmt | print_stmt | block_stmt | if_statement | while_statement | do_while_stmt | return_stmt);
 
 do_while_stmt -> DO block_stmt WHILE L_PAREN expression R_PAREN separator;
+
+return_stmt -> RETURN expression? separator;
 
 while_statement -> WHILE L_PAREN expression R_PAREN statement;
 

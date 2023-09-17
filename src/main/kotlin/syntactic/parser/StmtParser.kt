@@ -1,5 +1,6 @@
 package syntactic.parser
 
+import execution.RuntimeError
 import syntactic.tokenizer.Token
 import syntactic.tokenizer.TokenType
 
@@ -30,8 +31,19 @@ class StmtParser(private val parser: Parser, private val exprParser: ExprParser)
             parser.matchToken(TokenType.WHILE) -> parseWhileStmt()
             parser.matchToken(TokenType.DO) -> parseDoWhileStmt()
             parser.matchToken(TokenType.FUNC) -> parseFunctionStmt("function")
+            parser.matchToken(TokenType.RETURN) -> parseReturnStmt()
             else -> parseExpressionStmt()
         }
+    }
+
+    private fun parseReturnStmt(): Stmt.Return {
+        val keyword = parser.getPreviousToken()
+        var expr: Expr? = null
+        if (!parser.checkSeparator()) {
+            expr = exprParser.parse(Precedence.None)
+        }
+        parser.consumeSeparator()
+        return Stmt.Return(keyword, expr)
     }
 
     private fun parseVarDeclaration() =

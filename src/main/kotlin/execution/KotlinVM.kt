@@ -196,9 +196,14 @@ class KotlinVM(private val errorReporter: ErrorReporter) : VM {
         } while (isTruthy(evaluate(stmt.condition)))
     }
 
-    override fun visitFunctionStmt(function: Stmt.Function) {
+    override fun visitFunctionStmt(function: Stmt.Function): BirdCallable {
         val func = BirdFunction(function)
         environment.define(function.name.lexeme, func)
+        return func
+    }
+
+    override fun visitReturnStmt(stmt: Stmt.Return): Any {
+        throw ReturnCall(stmt.value?.let(::evaluate) ?: Nil)
     }
 
     private fun evaluate(expr: Expr): Any = expr.accept(this)

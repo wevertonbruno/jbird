@@ -9,7 +9,11 @@ class BirdFunction(private val declaration: Stmt.Function): BirdCallable {
         val env = Environment(vm.getGlobals())
         declaration.params.forEachIndexed { index, token ->
             env.define(token.lexeme, arguments[index]) }
-        vm.executeBlock(declaration.body.statements, env)
+        try {
+            vm.executeBlock(declaration.body.statements, env)
+        } catch (returnValue: ReturnCall){
+            return returnValue.value
+        }
         return Nil
     }
 

@@ -67,6 +67,7 @@ abstract class Stmt {
         fun visitWhileStmt(stmt: While): T
         fun visitDoWhileStmt(stmt: DoWhile): T
         fun visitFunctionStmt(function: Function): T
+        fun visitReturnStmt(stmt: Return): T
     }
 
     class Expression(val expr: Expr): Stmt() {
@@ -99,6 +100,10 @@ abstract class Stmt {
 
     class Function(val name: Token, val params: List<Token>, val body: Block): Stmt() {
         override fun <T> accept(visitor: Visitor<T>): T = run (visitor::visitFunctionStmt)
+    }
+
+    class Return(val keyword: Token, val value: Expr?): Stmt() {
+        override fun <T> accept(visitor: Visitor<T>): T = run (visitor::visitReturnStmt)
     }
 }
 

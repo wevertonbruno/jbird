@@ -33,7 +33,7 @@ class KotlinVMTest {
             a = 3
             print a + b;
         """.trimIndent(), "one_1"),
-        Arguments.of(""" 
+        Arguments.of("""
             {
                 var a = 3; var b = 2
                 print a * b;
@@ -46,14 +46,14 @@ class KotlinVMTest {
                 }
             }
         """.trimIndent(), "one_1"),
-        Arguments.of(""" 
+        Arguments.of("""
             var a;
             var b = nil;
             a = "assigned";
             print a; // OK, was assigned first.
             print b; // Nil
         """.trimIndent(), "one_1"),
-        Arguments.of(""" 
+        Arguments.of("""
             var a = 1;
             {
                  var a = a + 2;
@@ -65,7 +65,7 @@ class KotlinVMTest {
             if (a < 10) {
                 var b = 10
                 a = a + b
-                if (a < 10) 
+                if (a < 10)
                     print a
                 else
                     print b
@@ -92,6 +92,14 @@ class KotlinVMTest {
                 print "Hi, " + first + " " + last + "!"
             }
             sayHi("Dear", "Reader");
+            """.trimIndent(), ""),
+        Arguments.of("""
+            print "======= Return Stmt ======"
+            func fib(n) {
+                 if (n <= 1) { return n; }
+                 return fib(n - 2) + fib(n - 1);
+            }
+            print "Fibonacci = " + fib(10)
             """.trimIndent(), ""),
     )
 

@@ -101,6 +101,28 @@ class KotlinVMTest {
             }
             print "Fibonacci = " + fib(10)
             """.trimIndent(), ""),
+        Arguments.of("""
+            print "======= Closure ======"
+            func makeCounter() {
+                 var i = 0;
+                 func count() {
+                     i = i + 1;
+                     print i;
+                 }
+                 return count;
+            }
+            var counter = makeCounter();
+            counter(); // "1".
+            counter(); // "2".
+            """.trimIndent(), ""),
+        Arguments.of("""
+            print "======= Function Literal ======"
+            var b = func(a) {
+                 print "Hello, " + a + "."
+            }
+            
+            b("Weverton")
+            """.trimIndent(), ""),
     )
 
 

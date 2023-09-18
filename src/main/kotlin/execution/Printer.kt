@@ -38,4 +38,8 @@ class Printer : Expr.Visitor<String> {
     override fun visitCallExpr(call: Expr.Call): String {
         TODO("Not yet implemented")
     }
+
+    override fun visitFunctionExpr(function: Expr.Function): String {
+        TODO("Not yet implemented")
+    }
 }

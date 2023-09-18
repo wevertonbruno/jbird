@@ -95,10 +95,8 @@ class ParserTest {
     fun <T: Stmt> itShouldParseAnStmt(script: String, type: KClass<T>, accept: (stmt: Stmt) -> Unit) {
         val stmtParser = Tokenizer(script, mockk())
             .also (Tokenizer::scanTokens)
-            .let {
-                val parser = Parser(it, mockk())
-                StmtParser(parser, ExprParser(parser))
-            }
+            .let { Parser(it, mockk()) }
+            .let(::StmtParser)
 
         val stmt = assertNotNull(stmtParser.parseDeclarationStmt())
         assertEquals(type, stmt::class)

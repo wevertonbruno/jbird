@@ -1,5 +1,6 @@
 package syntactic.parser
 
+import syntactic.tokenizer.Token
 import syntactic.tokenizer.TokenLiteral
 import syntactic.tokenizer.TokenType
 
@@ -19,6 +20,7 @@ enum class Precedence {
     Exponential,
     Unary,
     Call,
+    Function,
     Primary;
 
     fun getLesser() = if (this == None) None else entries[ordinal - 1]
@@ -45,7 +47,8 @@ class ExprParser(private val parser: Parser) {
             TokenType.NIL,
             TokenType.TRUE,
             TokenType.FALSE,
-            TokenType.IDENTIFIER -> primary()
+            TokenType.IDENTIFIER,
+            TokenType.FUNC -> primary()
 
             TokenType.EXCLAMATION,
             TokenType.MINUS -> unary()
@@ -67,19 +70,21 @@ class ExprParser(private val parser: Parser) {
             TokenType.SLASH,
             TokenType.STAR,
             TokenType.POW -> binary(left)
+
             TokenType.QUESTION -> ternary(left)
-            TokenType.EQUAL -> assigment(left)
+            TokenType.EQUAL -> assignment(left)
             TokenType.OR,
             TokenType.AND -> logical(left)
+
             TokenType.LEFT_PAREN -> call(left)
 
             else -> throw ParserException(parser.peek(), UNEXPECTED_TOKEN.format(parser.peek()))
         }
 
-    private fun assigment(left: Expr): Expr {
+    private fun assignment(left: Expr): Expr {
         parser.consumeNextToken()
         val right = parse(Precedence.None)
-        return when(left) {
+        return when (left) {
             is Expr.Variable -> Expr.Assign(left.identifier, right)
             else -> throw ParserException(parser.peek(), "Invalid assignment target.")
         }
@@ -138,18 +143,29 @@ class ExprParser(private val parser: Parser) {
             TokenType.FALSE,
             TokenType.NIL,
             TokenType.NUMBER,
-            TokenType.STRING -> {
-                parser.consumeNextToken()
-                Expr.Literal((parser.getPreviousToken() as TokenLiteral).literal)
-            }
-
-            TokenType.IDENTIFIER -> {
-                parser.consumeNextToken()
-                Expr.Variable(parser.getPreviousToken())
-            }
+            TokenType.STRING -> Expr.Literal((parser.consumeNextToken() as TokenLiteral).literal)
+            TokenType.IDENTIFIER -> Expr.Variable(parser.consumeNextToken())
+            TokenType.FUNC -> { parser.consumeNextToken(); functionExpr("function") }
 
             else -> throw ParserException(parser.peek(), UNEXPECTED_PRIMARY_TOKEN.format(parser.peek()))
         }
+
+    internal fun functionExpr(kind: String): Expr.Function {
+        parser.consumeToken(TokenType.LEFT_PAREN, "Expect '(' after $kind.")
+        val params = mutableListOf<Token>()
+        if (!parser.checkToken(TokenType.RIGHT_PAREN)) {
+            params.add(parser.consumeToken(TokenType.IDENTIFIER, "Expect parameter name."))
+            while (parser.matchToken(TokenType.COMMA)) {
+                if (params.size >= 255) {
+                    throw ParserException(parser.peek(), "Cannot have more than 255 parameters.")
+                }
+                params.add(parser.consumeToken(TokenType.IDENTIFIER, "Expect parameter name."))
+            }
+        }
+        parser.consumeToken(TokenType.RIGHT_PAREN, "Expect ')' after parameters.")
+        parser.consumeToken(TokenType.LEFT_BRACE, "Expect '{' before $kind body.")
+        return Expr.Function(params, parser.parseBlockStmt().statements)
+    }
 
     private fun grouping(): Expr {
         parser.consumeToken(TokenType.LEFT_PAREN, "Expected '(' before expression.")
@@ -177,6 +193,7 @@ class ExprParser(private val parser: Parser) {
             TokenType.EQUAL -> Precedence.Assignment
             TokenType.OR -> Precedence.Or
             TokenType.AND -> Precedence.And
+            TokenType.FUNC -> Precedence.Function
             else -> Precedence.None
         }
     }

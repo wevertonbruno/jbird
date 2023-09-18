@@ -16,6 +16,7 @@ abstract class Expr {
         fun visitAssignExpr(assign: Assign): T
         fun visitLogicalExpr(logical: Logical): T
         fun visitCallExpr(call: Call): T
+        fun visitFunctionExpr(function: Function): T
     }
      
     class Binary(val left: Expr, val operator: Token, val right: Expr) : Expr() {
@@ -52,6 +53,10 @@ abstract class Expr {
 
     class Call(val callee: Expr, val paren: Token, val arguments: List<Expr>): Expr() {
         override fun <T> accept(visitor: Visitor<T>): T = run(visitor::visitCallExpr)
+    }
+
+    class Function(val params: List<Token>, val body: List<Stmt>): Expr() {
+        override fun <T> accept(visitor: Visitor<T>): T = run (visitor::visitFunctionExpr)
     }
 }
 
@@ -98,7 +103,7 @@ abstract class Stmt {
         override fun <T> accept(visitor: Visitor<T>): T = run (visitor::visitDoWhileStmt)
     }
 
-    class Function(val name: Token, val params: List<Token>, val body: Block): Stmt() {
+    class Function(val name: Token, val function: Expr.Function): Stmt() {
         override fun <T> accept(visitor: Visitor<T>): T = run (visitor::visitFunctionStmt)
     }
 

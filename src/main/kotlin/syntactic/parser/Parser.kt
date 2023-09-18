@@ -9,7 +9,7 @@ class ParserException(val token: Token, override val message: String) : RuntimeE
 class Parser(private val tokenizer: Tokenizer, private val errorReporter: ErrorReporter) {
 
     private val exprParser: ExprParser = ExprParser(this)
-    private val stmtParser: StmtParser = StmtParser(this, exprParser)
+    private val stmtParser: StmtParser = StmtParser(this)
     var currentCursor = 0
 
     fun parse() = try {
@@ -23,6 +23,14 @@ class Parser(private val tokenizer: Tokenizer, private val errorReporter: ErrorR
         errorReporter.report(ex.token, ex.message)
         null
     }
+
+    internal fun parseFunctionExpr(kind: String) = exprParser.functionExpr(kind)
+
+    internal fun parseExpr(): Expr = exprParser.parse(Precedence.None)
+
+    internal fun parseDeclarationStmt(): Stmt = stmtParser.parseDeclarationStmt()
+
+    internal fun parseBlockStmt(): Stmt.Block = stmtParser.parseBlockStmt()
 
     fun getTokens() = tokenizer.tokens
 }

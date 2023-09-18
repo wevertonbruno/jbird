@@ -43,6 +43,11 @@ internal fun Parser.consumeNextToken(): Token {
     return getPreviousToken()
 }
 
+internal fun Parser.rollbackLastToken(): Token {
+    currentCursor--
+    return peek()
+}
+
 internal fun Parser.getPreviousToken() = getTokens()[currentCursor - 1]
 
 internal fun Parser.peek(): Token = getTokens()[currentCursor]
@@ -53,6 +58,14 @@ internal fun Parser.consumeNL() {
     while (peek().type == TokenType.NEW_LINE){
         consumeNextToken()
     }
+}
+
+internal fun Parser.checkNextToken(type: TokenType): Boolean {
+    var cursor = currentCursor
+    while (getTokens()[cursor + 1].type == TokenType.NEW_LINE) {
+        cursor++
+    }
+    return getTokens()[cursor + 1].type == type
 }
 
 

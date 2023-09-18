@@ -159,6 +159,10 @@ class KotlinVM(private val errorReporter: ErrorReporter) : VM {
         }.call(this, arguments)
     }
 
+    override fun visitFunctionExpr(function: Expr.Function): Any {
+        return BirdFunction(function, environment)
+    }
+
     override fun visitExpressionStmt(expr: Stmt.Expression) = evaluate(expr.expr)
 
     override fun visitPrintStmt(expr: Stmt.Print) =
@@ -196,9 +200,9 @@ class KotlinVM(private val errorReporter: ErrorReporter) : VM {
         } while (isTruthy(evaluate(stmt.condition)))
     }
 
-    override fun visitFunctionStmt(function: Stmt.Function): BirdCallable {
-        val func = BirdFunction(function)
-        environment.define(function.name.lexeme, func)
+    override fun visitFunctionStmt(stmt: Stmt.Function): BirdCallable {
+        val func = BirdFunction(stmt.function, environment, name = stmt.name.lexeme)
+        environment.define(stmt.name.lexeme, func)
         return func
     }
 
